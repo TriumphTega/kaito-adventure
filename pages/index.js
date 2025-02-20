@@ -10,11 +10,12 @@ import {
   Modal,
   Form,
 } from "react-bootstrap";
+import styles from '../styles/Combat.module.css';
 
 export default function Home() {
-  const [player, setPlayer] = useState({
+  const defaultPlayer = {
     name: "Kaito Brewmaster",
-    gold: 5, // Adjusted to 5 from 0
+    gold: 5,
     health: 100,
     inventory: [
       { name: "Water", quantity: 2 },
@@ -28,18 +29,23 @@ export default function Home() {
       { name: "Medium Healing Potion", ingredients: ["Water", "Mist Essence"], type: "heal", healAmount: 40 },
       { name: "Strong Healing Potion", ingredients: ["Mist Essence", "Shadow Root"], type: "heal", healAmount: 60 },
     ],
-  });
+  };
+
+  // Initialize with defaults, sync with localStorage in useEffect
+  const [player, setPlayer] = useState(defaultPlayer);
   const [currentTown, setCurrentTown] = useState("Sakura Village");
   const [gameMessage, setGameMessage] = useState("Welcome to Kaito's Adventure!");
   const [showCraftModal, setShowCraftModal] = useState(false);
   const [showHealingModal, setShowHealingModal] = useState(false);
   const [showMarketModal, setShowMarketModal] = useState(false);
   const [showGatherModal, setShowGatherModal] = useState(false);
+  const [showCombatModal, setShowCombatModal] = useState(false);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
   const [lastGatherTimes, setLastGatherTimes] = useState({});
   const [lastQueuedGatherTime, setLastQueuedGatherTime] = useState(null);
   const [countdown, setCountdown] = useState(null);
   const [queuedCountdown, setQueuedCountdown] = useState(null);
+  const [combatState, setCombatState] = useState(null);
 
   const towns = [
     {
@@ -69,22 +75,32 @@ export default function Home() {
   ];
   const allIngredients = ["Water", "Herbs", "Pepper", "Sugar", "Mist Essence", "Shadow Root"];
 
+  // Load state from localStorage on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const loadedTimes = {};
-      towns.forEach((town) => {
-        const storedTime = localStorage.getItem(`lastGatherTime_${town.name}`);
-        if (storedTime) {
-          loadedTimes[town.name] = parseInt(storedTime, 10);
-        }
-      });
-      setLastGatherTimes(loadedTimes);
-      const storedQueuedTime = localStorage.getItem("lastQueuedGatherTime");
-      if (storedQueuedTime) {
-        setLastQueuedGatherTime(parseInt(storedQueuedTime, 10));
-      }
+      const savedPlayer = localStorage.getItem("player");
+      if (savedPlayer) setPlayer(JSON.parse(savedPlayer));
+
+      const savedTown = localStorage.getItem("currentTown");
+      if (savedTown) setCurrentTown(savedTown);
+
+      const savedGatherTimes = localStorage.getItem("lastGatherTimes");
+      if (savedGatherTimes) setLastGatherTimes(JSON.parse(savedGatherTimes));
+
+      const savedQueuedTime = localStorage.getItem("lastQueuedGatherTime");
+      if (savedQueuedTime) setLastQueuedGatherTime(parseInt(savedQueuedTime, 10));
     }
-  }, []);
+  }, []); // Empty dependency array—runs once on mount
+
+  // Save state to localStorage on every change
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("player", JSON.stringify(player));
+      localStorage.setItem("currentTown", currentTown);
+      localStorage.setItem("lastGatherTimes", JSON.stringify(lastGatherTimes));
+      localStorage.setItem("lastQueuedGatherTime", lastQueuedGatherTime ? lastQueuedGatherTime.toString() : null);
+    }
+  }, [player, currentTown, lastGatherTimes, lastQueuedGatherTime]);
 
   const getAvailableIngredients = useCallback(() => {
     const currentTownData = towns.find((t) => t.name === currentTown);
@@ -120,7 +136,7 @@ export default function Home() {
 
   const canGatherQueued = useCallback(() => {
     if (!lastQueuedGatherTime) return true;
-    const cooldownMinutes = 3; // Reduced to 3 minutes from 5
+    const cooldownMinutes = 3;
     const now = new Date().getTime();
     const timeSinceLastQueued = (now - lastQueuedGatherTime) / (1000 * 60);
     return timeSinceLastQueued >= cooldownMinutes;
@@ -150,27 +166,21 @@ export default function Home() {
     const randomIngredient = availableToGather[Math.floor(Math.random() * availableToGather.length)];
     setPlayer((prev) => {
       const existingItem = prev.inventory.find((item) => item.name === randomIngredient);
+      let newInventory;
       if (existingItem) {
-        return {
-          ...prev,
-          inventory: prev.inventory.map((item) =>
-            item.name === randomIngredient ? { ...item, quantity: item.quantity + 1 } : item
-          ),
-        };
+        newInventory = prev.inventory.map((item) =>
+          item.name === randomIngredient ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      } else {
+        newInventory = [...prev.inventory, { name: randomIngredient, quantity: 1 }];
       }
-      return {
-        ...prev,
-        inventory: [...prev.inventory, { name: randomIngredient, quantity: 1 }],
-      };
+      return { ...prev, inventory: newInventory };
     });
     const now = new Date().getTime();
     setLastGatherTimes((prev) => ({
       ...prev,
       [currentTown]: now,
     }));
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`lastGatherTime_${currentTown}`, now.toString());
-    }
     setGameMessage(`You gathered 1 ${randomIngredient}!`);
     setShowGatherModal(false);
   }, [canGatherNormal, currentTown, player.inventory, lastGatherTimes]);
@@ -227,9 +237,6 @@ export default function Home() {
     });
     const now = new Date().getTime();
     setLastQueuedGatherTime(now);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("lastQueuedGatherTime", now.toString());
-    }
     setGameMessage(`You queued ${count} gathers for ${cost} gold! Gathered: ${Array(count).fill().map(() => availableToGather[Math.floor(Math.random() * availableToGather.length)]).join(", ")}`);
     setShowGatherModal(false);
   }, [canGatherQueued, currentTown, player.gold, player.inventory, lastQueuedGatherTime]);
@@ -258,6 +265,83 @@ export default function Home() {
     });
     setGameMessage(`You bought 1 ${ingredient} for ${price} gold!`);
   }, [player.gold, player.inventory]);
+
+  const startCombat = useCallback(() => {
+    const enemyType = Math.random() < 0.7 ? "weak" : "strong";
+    const enemy = enemyType === "weak"
+      ? { name: "Bandit", health: 20, damage: 10, gold: 5 }
+      : { name: "Ogre", health: 40, damage: 30, gold: 15 };
+    setCombatState({
+      enemy,
+      playerHealth: player.health,
+      enemyHealth: enemy.health,
+      log: [`Combat started against ${enemy.name}!`],
+      isAttacking: false,
+    });
+    setShowCombatModal(true);
+  }, [player.health]);
+
+  const attackEnemy = useCallback(() => {
+    if (!combatState || combatState.isAttacking) return;
+    setCombatState((prev) => ({
+      ...prev,
+      isAttacking: true,
+    }));
+
+    setTimeout(() => {
+      setCombatState((prev) => {
+        const playerDamage = Math.floor(Math.random() * 10) + 10; // 10–20 damage
+        const newEnemyHealth = Math.max(prev.enemyHealth - playerDamage, 0);
+        let newLog = [...prev.log, `Kaito deals ${playerDamage} damage to ${prev.enemy.name}!`];
+
+        if (newEnemyHealth <= 0) {
+          const dropChance = Math.random() < 0.1;
+          const drop = dropChance ? "Mist Essence" : null;
+          setPlayer((p) => {
+            let newInventory = [...p.inventory];
+            if (drop) {
+              const existingItem = newInventory.find((item) => item.name === drop);
+              if (existingItem) {
+                newInventory = newInventory.map((item) =>
+                  item.name === drop ? { ...item, quantity: item.quantity + 1 } : item
+                );
+              } else {
+                newInventory.push({ name: drop, quantity: 1 });
+              }
+            }
+            return {
+              ...p,
+              gold: p.gold + prev.enemy.gold,
+              inventory: newInventory,
+            };
+          });
+          setGameMessage(`You defeated ${prev.enemy.name} and earned ${prev.enemy.gold} gold!${drop ? ` Dropped: ${drop}` : ""}`);
+          setShowCombatModal(false);
+          return null;
+        }
+
+        const enemyDamage = prev.enemy.damage;
+        const newPlayerHealth = Math.max(prev.playerHealth - enemyDamage, 0);
+        newLog.push(`${prev.enemy.name} deals ${enemyDamage} damage to Kaito!`);
+
+        if (newPlayerHealth <= 0) {
+          setPlayer((p) => ({ ...p, health: 0 }));
+          setGameMessage("You were defeated!");
+          setShowCombatModal(false);
+          return null;
+        }
+
+        setPlayer((p) => ({ ...p, health: newPlayerHealth }));
+        return {
+          ...prev,
+          playerHealth: newPlayerHealth,
+          enemyHealth: newEnemyHealth,
+          log: newLog,
+          isAttacking: false,
+        };
+      });
+    }, 1000);
+  }, [combatState, player]);
 
   const toggleIngredient = useCallback((item) => {
     setSelectedIngredients((prev) =>
@@ -396,17 +480,6 @@ export default function Home() {
     setGameMessage(`You sold ${drinkName} for ${reward} gold!`);
   }, [player, currentTown]);
 
-  const fightEnemy = useCallback(() => {
-    const damage = Math.floor(Math.random() * 20) + 10;
-    const goldReward = 5;
-    setPlayer((prev) => ({
-      ...prev,
-      health: Math.max(prev.health - damage, 0),
-      gold: prev.gold + goldReward,
-    }));
-    setGameMessage(`You fought an enemy, took ${damage} damage, and earned ${goldReward} gold!`);
-  }, []);
-
   const travel = useCallback((town) => {
     setCurrentTown(town);
     setGameMessage(`You arrived at ${town}!`);
@@ -436,7 +509,7 @@ export default function Home() {
         setQueuedCountdown(null);
         return;
       }
-      const cooldownSeconds = 3 * 60; // 3-minute global cooldown for queued gathers
+      const cooldownSeconds = 3 * 60;
       const now = new Date().getTime();
       const elapsedSeconds = Math.floor((now - lastQueuedGatherTime) / 1000);
       const remainingSeconds = Math.max(cooldownSeconds - elapsedSeconds, 0);
@@ -499,8 +572,8 @@ export default function Home() {
                 <Button variant="info" onClick={() => setShowHealingModal(true)} className="m-2">
                   Craft Healing Potion
                 </Button>
-                <Button variant="danger" onClick={fightEnemy} className="m-2">
-                  Fight Enemy
+                <Button variant="danger" onClick={startCombat} className="m-2">
+                  Start Combat
                 </Button>
                 <Button variant="warning" onClick={() => setShowGatherModal(true)} className="m-2">
                   Gather Ingredient
@@ -534,7 +607,7 @@ export default function Home() {
         </Row>
       </Container>
 
-      {/* Craft Modal (Sellable Drinks) */}
+      {/* Craft Modal */}
       <Modal show={showCraftModal} onHide={() => setShowCraftModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Craft a Drink</Modal.Title>
@@ -650,6 +723,79 @@ export default function Home() {
             Cancel
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* Combat Modal */}
+      <Modal
+        show={showCombatModal}
+        onHide={() => setShowCombatModal(false)}
+        size="xl"
+        centered
+        dialogClassName="combat-modal"
+      >
+        <Modal.Body className="p-0">
+          <Card className="border-0">
+            <Card.Header className="bg-danger text-center text-white">
+              <h3>Combat Arena</h3>
+            </Card.Header>
+            <Card.Body>
+              {combatState && (
+                <Row>
+                  <Col md={5} className="text-center">
+                    <h4>Kaito</h4>
+                    <div className={`${styles.healthBar} mb-3`}>
+                      <div
+                        className={styles.healthFill}
+                        style={{ width: `${(combatState.playerHealth / player.health) * 100}%` }}
+                      />
+                    </div>
+                    <p>Health: {combatState.playerHealth}/{player.health}</p>
+                    <div className={combatState.isAttacking ? styles.attacking : ""}>
+                      [Kaito Placeholder]
+                    </div>
+                  </Col>
+                  <Col md={2} className="align-items-center d-flex justify-content-center">
+                    <h2>VS</h2>
+                  </Col>
+                  <Col md={5} className="text-center">
+                    <h4>{combatState.enemy.name}</h4>
+                    <div className={`${styles.healthBar} mb-3`}>
+                      <div
+                        className={styles.healthFill}
+                        style={{ width: `${(combatState.enemyHealth / combatState.enemy.health) * 100}%` }}
+                      />
+                    </div>
+                    <p>Health: {combatState.enemyHealth}/{combatState.enemy.health}</p>
+                    <div className={combatState.isAttacking ? styles.enemyHit : ""}>
+                      [Enemy Placeholder]
+                    </div>
+                  </Col>
+                </Row>
+              )}
+              <div className="mt-3 text-center">
+                <Button
+                  variant="danger"
+                  onClick={attackEnemy}
+                  disabled={!combatState || combatState.isAttacking}
+                >
+                  Attack
+                </Button>
+              </div>
+              {combatState && (
+                <ListGroup className="mt-3" style={{ maxHeight: "150px", overflowY: "auto" }}>
+                  {combatState.log.map((entry, idx) => (
+                    <ListGroup.Item key={idx}>{entry}</ListGroup.Item>
+                  ))}
+                </ListGroup>
+              )}
+            </Card.Body>
+            <Card.Footer className="text-center">
+              <Button variant="secondary" onClick={() => setShowCombatModal(false)}>
+                Flee
+              </Button>
+            </Card.Footer>
+          </Card>
+        </Modal.Body>
       </Modal>
 
       {/* Market Modal */}
