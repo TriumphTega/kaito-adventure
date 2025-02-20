@@ -3,6 +3,15 @@
   --foreground: #171717;
 }
 
+.btn-primary {
+  background-color: #ff4500; /* Orange */
+  border-color: #ff4500;
+}
+.btn-primary:hover {
+  background-color: #ff69b4; /* Hot pink */
+  border-color: #ff69b4;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
