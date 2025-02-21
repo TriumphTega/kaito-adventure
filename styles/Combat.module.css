@@ -10,14 +10,25 @@
     height: 100%;
     background: #ff4444;
     transition: width 0.5s ease-in-out;
+    will-change: width;
   }
   
   .attacking {
     animation: attack 0.5s;
+    will-change: transform, opacity;
   }
   
   .enemyHit {
     animation: hit 0.5s;
+    will-change: opacity;
+  }
+  
+  .leaderboardModal {
+    position: absolute;
+    top: 60px;
+    left: 10px;
+    width: 300px;
+    max-width: 90vw;
   }
   
   @keyframes attack {
