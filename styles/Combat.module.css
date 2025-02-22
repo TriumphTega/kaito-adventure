@@ -1,29 +1,29 @@
+/* Existing styles (assumed) */
 .healthBar {
-    width: 100%;
-    height: 20px;
-    background: #ccc;
-    border: 1px solid #000;
-    position: relative;
-  }
-  
-  .healthFill {
-    height: 100%;
-    background: #ff4444;
-    transition: width 0.5s ease-in-out;
-    will-change: width;
-  }
-  
-  .attacking {
-    animation: attack 0.5s;
-    will-change: transform, opacity;
-  }
-  
-  .enemyHit {
-    animation: hit 0.5s;
-    will-change: opacity;
-  }
-  
-  /* New styles */
+  /* Your existing health bar styles */
+  width: 100%;
+  height: 20px;
+  background: #ccc;
+  border: 1px solid #000;
+}
+
+.healthFill {
+  /* Your existing health fill styles */
+  height: 100%;
+  background: #f00;
+  transition: width 0.3s;
+}
+
+.attacking {
+  /* Your existing attacking animation */
+  animation: shake 0.5s;
+}
+
+.enemyHit {
+  /* Your existing enemy hit animation */
+  animation: shake 0.5s;
+}
+
 .combatBody {
   position: relative;
 }
@@ -36,24 +36,27 @@
   z-index: 1000;
   padding: 15px;
   font-weight: bold;
+  border-radius: 10px;
+  border: 1px solid #FFD700;
+  box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+  background: linear-gradient(to bottom, #FFF8E1, #FDF5E6);
 }
 
-  .leaderboardModal {
-    position: absolute;
-    top: 60px;
-    left: 10px;
-    width: 300px;
-    max-width: 90vw;
-  }
-  
-  @keyframes attack {
-    0% { transform: translateX(0); opacity: 1; }
-    50% { transform: translateX(20px); opacity: 0.7; }
-    100% { transform: translateX(0); opacity: 1; }
-  }
-  
-  @keyframes hit {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-  }
+/* Updated gilded styles */
+.gildedModal {
+  border-radius: 15px;
+  border: 2px solid #FFD700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  background: linear-gradient(to bottom, rgba(255, 248, 225, 0.7), rgba(253, 245, 230, 0.7)); /* More transparent */
+}
+
+.gildedCard {
+  border-radius: 15px;
+  border: 2px solid #FFD700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  background: linear-gradient(to bottom, #FFF8E1, #FDF5E6);
+}
+
+.lightBackdrop {
+  background-color: rgba(0, 0, 0, 0.1) !important; /* Lighter backdrop */
+}

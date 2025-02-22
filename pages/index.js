@@ -109,7 +109,7 @@ const Home = () => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [townLevels, setTownLevels] = useState({ "Sakura Village": 1, "Iron Port": 1, "Mist Hollow": 1 });
   const [activeTab, setActiveTab] = useState("drinks");
-  
+
   // Persistence
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -120,7 +120,7 @@ const Home = () => {
         setPlayer({
           ...defaultPlayerMemo,
           ...parsedPlayer,
-          recipes: [...defaultPlayerMemo.recipes], // Always keep default recipes
+          recipes: [...defaultPlayerMemo.recipes],
           skills: parsedPlayer.skills || [],
           equipment: parsedPlayer.equipment || { weapon: null },
           quests: parsedPlayer.quests || [],
@@ -162,6 +162,8 @@ const Home = () => {
       const newLevel = Math.floor(newXP / 150) + 1;
       return { ...prev, xp: newXP, level: newLevel };
     });
+  }, [player.xp]); // Added player.xp to log current value
+
   }, []);
 
   const xpProgress = useMemo(() => {
@@ -198,7 +200,7 @@ const Home = () => {
     });
   }, []);
 
-  // Daily Tasks (Defined early to avoid initialization error)
+  // Daily Tasks
   const completeDailyTask = useCallback((taskId) => {
     setPlayer(prev => {
       const task = prev.dailyTasks.find(t => t.id === taskId);
@@ -487,7 +489,6 @@ const Home = () => {
     if (onSuccess) onSuccess(recipe);
   }, [player.recipes, selectedIngredients, getAvailableIngredients, updateXP, completeDailyTask]);
 
-
   const craftHealingPotion = useCallback(() => craftItem("heal"), [craftItem]);
 
   // Market
@@ -673,7 +674,7 @@ const Home = () => {
         <Button variant="info" style={{ position: "absolute", top: "10px", left: "10px" }} onClick={() => toggleModal("leaderboard")}>Leaderboard</Button>
         <Row className="justify-content-center">
           <Col md={10}>
-            <Card className="text-center" style={{ background: "rgba(255, 255, 255, 0.9)" }}>
+            <Card className={`text-center ${styles.gildedCard}`} style={{ background: "rgba(255, 255, 255, 0.9)" }}>
               <Card.Body className="p-4">
                 <Card.Title as="h1" className="mb-3 text-danger">{player.name} (Level {player.level})</Card.Title>
                 <Card.Text>Health: {player.health} | Gold: {player.gold} | XP: {player.xp}</Card.Text>
@@ -735,7 +736,7 @@ const Home = () => {
         </Row>
       </Container>
 
-      <Modal show={modals.quests} onHide={() => toggleModal("quests")}>
+      <Modal show={modals.quests} onHide={() => toggleModal("quests")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Header closeButton><Modal.Title>Quests</Modal.Title></Modal.Header>
         <Modal.Body>
           <ListGroup variant="flush">
@@ -751,7 +752,7 @@ const Home = () => {
         <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("quests")}>Close</Button></Modal.Footer>
       </Modal>
 
-      <Modal show={modals.leaderboard} onHide={() => toggleModal("leaderboard")}>
+      <Modal show={modals.leaderboard} onHide={() => toggleModal("leaderboard")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Header closeButton><Modal.Title>Leaderboard</Modal.Title></Modal.Header>
         <Modal.Body>
           <ListGroup variant="flush">
@@ -763,7 +764,7 @@ const Home = () => {
         <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("leaderboard")}>Close</Button></Modal.Footer>
       </Modal>
 
-      <Modal show={modals.craft} onHide={() => toggleModal("craft")}>
+      <Modal show={modals.craft} onHide={() => toggleModal("craft")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Header closeButton><Modal.Title>Craft Items</Modal.Title></Modal.Header>
         <Modal.Body>
           <Form>
@@ -779,9 +780,7 @@ const Home = () => {
               />
             ))}
           </Form>
-          const [activeTab, setActiveTab] = useState("drinks");
-// ... (other modal content) ...
-<Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} id="craft-tabs" className="mt-3">
+          <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} id="craft-tabs" className="mt-3">
             <Tab eventKey="drinks" title="Drinks">
               <p className="mt-3">Known Sellable Recipes:</p>
               <ul>{player.recipes.filter(r => r.type === "sell").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")}</li>)}</ul>
@@ -798,7 +797,7 @@ const Home = () => {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={modals.healing} onHide={() => toggleModal("healing")}>
+      <Modal show={modals.healing} onHide={() => toggleModal("healing")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Header closeButton><Modal.Title>Craft a Healing Potion</Modal.Title></Modal.Header>
         <Modal.Body>
           <Form>
@@ -823,7 +822,7 @@ const Home = () => {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={modals.gather} onHide={() => toggleModal("gather")}>
+      <Modal show={modals.gather} onHide={() => toggleModal("gather")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Header closeButton><Modal.Title>Gather Options in {currentTown}</Modal.Title></Modal.Header>
         <Modal.Body>
           <Card className="mb-3">
@@ -853,10 +852,10 @@ const Home = () => {
             </Card.Body>
           </Card>
         </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("gather")}>Cancel</Button></Modal.Footer>
+        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("gather")}>Close</Button></Modal.Footer>
       </Modal>
 
-      <Modal show={modals.combat} onHide={() => toggleModal("combat")} size="xl" centered>
+      <Modal show={modals.combat} onHide={() => toggleModal("combat")} size="xl" centered className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Body className="p-0">
           <Card className="border-0">
             <Card.Header className="bg-danger text-center text-white"><h3>Combat Arena</h3></Card.Header>
@@ -914,7 +913,7 @@ const Home = () => {
         </Modal.Body>
       </Modal>
 
-      <Modal show={modals.market} onHide={() => toggleModal("market")}>
+      <Modal show={modals.market} onHide={() => toggleModal("market")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Header closeButton><Modal.Title>{currentTown} Market</Modal.Title></Modal.Header>
         <Modal.Body>
           <h5>Sell Your Drinks:</h5>
@@ -951,7 +950,7 @@ const Home = () => {
         <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("market")}>Close</Button></Modal.Footer>
       </Modal>
 
-      <Modal show={modals.daily} onHide={() => toggleModal("daily")}>
+      <Modal show={modals.daily} onHide={() => toggleModal("daily")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Header closeButton><Modal.Title>Daily Rewards & Challenges</Modal.Title></Modal.Header>
         <Modal.Body>
           <p>Daily Login Bonus: 20 Gold (Claimed today)</p>
@@ -969,7 +968,7 @@ const Home = () => {
         <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("daily")}>Close</Button></Modal.Footer>
       </Modal>
 
-      <Modal show={modals.stats} onHide={() => toggleModal("stats")}>
+      <Modal show={modals.stats} onHide={() => toggleModal("stats")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Header closeButton><Modal.Title>Lifetime Stats</Modal.Title></Modal.Header>
         <Modal.Body>
           <ListGroup variant="flush">
@@ -982,7 +981,7 @@ const Home = () => {
         <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("stats")}>Close</Button></Modal.Footer>
       </Modal>
 
-      <Modal show={modals.community} onHide={() => toggleModal("community")}>
+      <Modal show={modals.community} onHide={() => toggleModal("community")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Header closeButton><Modal.Title>Community Events</Modal.Title></Modal.Header>
         <Modal.Body>
           <p>{mockCommunityEvent().description}</p>
