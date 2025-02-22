@@ -23,6 +23,21 @@
     will-change: opacity;
   }
   
+  /* New styles */
+.combatBody {
+  position: relative;
+}
+
+.combatResult {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  padding: 15px;
+  font-weight: bold;
+}
+
   .leaderboardModal {
     position: absolute;
     top: 60px;
