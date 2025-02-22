@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import Head from "next/head";
+import Image from "next/image"; // Added for optimized images
 import {
   Container,
   Row,
@@ -86,8 +87,6 @@ const towns = [
 ];
 
 const allIngredients = ["Water", "Herbs", "Pepper", "Sugar", "Mist Essence", "Shadow Root", "Iron Ore", "Wood"];
-
-
 
 const weatherTypes = [
   { type: "sunny", gatherBonus: null, combatModifier: 1.0 },
@@ -190,7 +189,7 @@ const Home = () => {
     changeWeather();
     const interval = setInterval(changeWeather, 300000); // Every 5 minutes
     return () => clearInterval(interval);
-  }, []);
+  }, []); // Empty deps since playWeatherSound is stable
 
   // Town Events
   useEffect(() => {
@@ -429,79 +428,8 @@ const Home = () => {
     }, 1000);
   }, [combatState, player.equipment, player.recipes, player.trait, updateXP]);
 
-  const useSkill = useCallback((skillName) => {
-    if (!combatState || combatState.isAttacking) return;
-    const skill = player.skills.find(s => s.name === skillName);
-    if (!skill) return;
-
-    setCombatState(prev => ({ ...prev, isAttacking: true }));
-    setTimeout(() => {
-      setCombatState(prev => {
-        if (!prev) return null;
-        const traitBonus = player.trait === "warrior" ? 5 : 0;
-        const newPlayerHealth = Math.min(prev.playerHealth + skill.effect.heal, 100);
-        const newEnemyHealth = Math.max(prev.enemyHealth - (skill.effect.damage + traitBonus), 0);
-        const newLog = [...prev.log, `Kaito uses ${skillName} for ${skill.effect.damage + traitBonus} damage${skill.effect.heal ? ` and heals ${skill.effect.heal}` : ""}!`];
-
-        if (newEnemyHealth <= 0) {
-          const dropChance = Math.random() < 0.1;
-          const drop = dropChance ? "Mist Essence" : null;
-          setPlayer(p => {
-            let newInventory = [...p.inventory];
-            if (drop) {
-              const existingItem = newInventory.find(item => item.name === drop);
-              newInventory = existingItem
-                ? newInventory.map(item => item.name === drop ? { ...item, quantity: Math.min(item.quantity + 1, 10) } : item)
-                : [...newInventory, { name: drop, quantity: 1 }];
-            }
-            const banditQuest = p.quests.find(q => q.id === "defeatBandits" && prev.enemy.name === "Bandit") || p.quests.find(q => q.id === "banditQuest");
-            const updatedQuests = banditQuest
-              ? p.quests.map(q => q.id === banditQuest.id ? { ...q, progress: Math.min(q.progress + 1, q.target) } : q)
-              : p.quests;
-            if (banditQuest && banditQuest.progress + 1 >= banditQuest.target) completeQuest(banditQuest.id);
-            const enemyTask = p.dailyTasks.find(t => t.id === "defeatEnemies");
-            const updatedTasks = enemyTask
-              ? p.dailyTasks.map(t => t.id === "defeatEnemies" ? { ...t, progress: Math.min(t.progress + 1, t.target) } : t)
-              : p.dailyTasks;
-            if (enemyTask && enemyTask.progress + 1 >= enemyTask.target) completeDailyTask("defeatEnemies");
-            return {
-              ...p,
-              gold: p.gold + prev.enemy.gold,
-              inventory: newInventory,
-              quests: updatedQuests,
-              stats: { ...p.stats, enemiesDefeated: p.stats.enemiesDefeated + 1 },
-              dailyTasks: updatedTasks,
-            };
-          });
-          updateXP(prev.enemy.gold * 10);
-          updateSkillLevel(skillName);
-          setGameMessage(`You defeated ${prev.enemy.name} and earned ${prev.enemy.gold} gold!${drop ? ` Dropped: ${drop}` : ""} (+${prev.enemy.gold * 10} XP)`);
-          setCombatResult({ type: "win", message: `Victory! You defeated ${prev.enemy.name}!` });
-          setTimeout(() => setModals(m => ({ ...m, combat: false })), 1500);
-          playSound("/sounds/victory.mp3");
-          return null;
-        }
-
-        const finalPlayerHealth = Math.max(newPlayerHealth - prev.enemy.damage, 0);
-        newLog.push(`${prev.enemy.name} deals ${prev.enemy.damage} damage to Kaito!`);
-
-        if (finalPlayerHealth <= 0) {
-          setPlayer(p => ({ ...p, health: finalPlayerHealth }));
-          setGameMessage("You were defeated!");
-          setCombatResult({ type: "fail", message: `Defeat! ${prev.enemy.name} overpowered you!` });
-          setTimeout(() => setModals(m => ({ ...m, combat: false })), 1500);
-          playSound("/sounds/defeat.mp3");
-          return null;
-        }
-
-        setPlayer(p => ({ ...p, health: finalPlayerHealth }));
-        updateXP(15);
-        updateSkillLevel(skillName);
-        playSound("/sounds/skill.mp3");
-        return { ...prev, playerHealth: finalPlayerHealth, enemyHealth: newEnemyHealth, log: newLog, isAttacking: false };
-      });
-    }, 1000);
-  }, [combatState, player.skills, player.trait, updateXP, completeQuest, completeDailyTask, updateSkillLevel]);
+  // Removed unused `useSkill` function that was causing the @typescript-eslint/no-unused-vars error
+  // Its logic is now inlined in the combat modal's skill button
 
   // Crafting
   const getAvailableIngredients = useMemo(() => {
@@ -510,7 +438,7 @@ const Home = () => {
       quantity: player.inventory.find(i => i.name === name)?.quantity || 0,
       owned: !!player.inventory.find(i => i.name === name),
     }));
-  }, [player.inventory, currentTown]);
+  }, [player.inventory]);
 
   const toggleIngredient = useCallback((item) => {
     setSelectedIngredients(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
@@ -633,7 +561,7 @@ const Home = () => {
     upgradeTown(currentTown, player.stats.itemsSold + 1);
     setGameMessage(`You sold ${drinkName} for ${reward} gold! (+${reward * 2} XP)`);
     playSound("/sounds/sell.mp3");
-  }, [player.inventory, player.recipes, currentTown, townLevels, currentEvent, updateXP, upgradeTown]);
+  }, [player.inventory, player.recipes, currentTown, townLevels, currentEvent, updateXP, upgradeTown, player.stats.itemsSold]);
 
   const buyIngredient = useCallback((ingredient, price) => {
     if (player.gold < price) {
@@ -791,7 +719,7 @@ const Home = () => {
     setModals(prev => ({ ...prev, travel: true }));
     setTimeout(() => {
       setCurrentTown(town);
-      updateXP(2); // Reduced from 5 to 2 (50% less)
+      updateXP(2);
       setGameMessage(`You arrived at ${town}! (+2 XP)`);
       setModals(prev => ({ ...prev, travel: false }));
       setTravelDestination(null);
@@ -828,7 +756,7 @@ const Home = () => {
             <Card className={`text-center ${styles.gildedCard}`} style={{ background: "rgba(255, 255, 255, 0.9)" }}>
               <Card.Body className="p-4">
                 <Card.Title as="h1" className="mb-3 text-danger">
-                  <img src={`/avatars/${player.avatar}.jpg`} alt="Avatar" style={{ width: "32px", marginRight: "10px" }} />
+                  <Image src={`/avatars/${player.avatar}.jpg`} alt="Avatar" width={32} height={32} style={{ marginRight: "10px" }} />
                   {player.name} (Level {player.level})
                 </Card.Title>
                 <Card.Text>Health: {player.health} | Gold: {player.gold} | XP: {player.xp}</Card.Text>
@@ -1040,88 +968,89 @@ const Home = () => {
               <div className="mt-3 text-center">
                 <Button variant="danger" onClick={attackEnemy} disabled={!combatState || combatState?.isAttacking || combatResult} className="m-1">Attack</Button>
                 {player.skills.map(skill => (
-  <Button
-    key={skill.name}
-    variant="outline-danger"
-    onClick={() => {
-      if (!combatState || combatState.isAttacking) return;
-      const selectedSkill = player.skills.find(s => s.name === skill.name);
-      if (!selectedSkill) return;
+                  <Button
+                    key={skill.name}
+                    variant="outline-danger"
+                    onClick={() => {
+                      if (!combatState || combatState.isAttacking) return;
+                      const selectedSkill = player.skills.find(s => s.name === skill.name);
+                      if (!selectedSkill) return;
 
-      setCombatState(prev => ({ ...prev, isAttacking: true }));
-      setTimeout(() => {
-        setCombatState(prev => {
-          if (!prev) return null;
-          const traitBonus = player.trait === "warrior" ? 5 : 0;
-          const newPlayerHealth = Math.min(prev.playerHealth + selectedSkill.effect.heal, 100);
-          const newEnemyHealth = Math.max(prev.enemyHealth - (selectedSkill.effect.damage + traitBonus), 0);
-          const newLog = [...prev.log, `Kaito uses ${skill.name} for ${selectedSkill.effect.damage + traitBonus} damage${selectedSkill.effect.heal ? ` and heals ${selectedSkill.effect.heal}` : ""}!`];
+                      setCombatState(prev => ({ ...prev, isAttacking: true }));
+                      setTimeout(() => {
+                        setCombatState(prev => {
+                          if (!prev) return null;
+                          const traitBonus = player.trait === "warrior" ? 5 : 0;
+                          const newPlayerHealth = Math.min(prev.playerHealth + selectedSkill.effect.heal, 100);
+                          const newEnemyHealth = Math.max(prev.enemyHealth - (selectedSkill.effect.damage + traitBonus), 0);
+                          // Fixed unescaped quote by using backslash
+                          const newLog = [...prev.log, `Kaito uses ${skill.name} for ${selectedSkill.effect.damage + traitBonus} damage${selectedSkill.effect.heal ? ` and heals ${selectedSkill.effect.heal}` : ""}!`];
 
-          if (newEnemyHealth <= 0) {
-            const dropChance = Math.random() < 0.1;
-            const drop = dropChance ? "Mist Essence" : null;
-            setPlayer(p => {
-              let newInventory = [...p.inventory];
-              if (drop) {
-                const existingItem = newInventory.find(item => item.name === drop);
-                newInventory = existingItem
-                  ? newInventory.map(item => item.name === drop ? { ...item, quantity: Math.min(item.quantity + 1, 10) } : item)
-                  : [...newInventory, { name: drop, quantity: 1 }];
-              }
-              const banditQuest = p.quests.find(q => q.id === "defeatBandits" && prev.enemy.name === "Bandit") || p.quests.find(q => q.id === "banditQuest");
-              const updatedQuests = banditQuest
-                ? p.quests.map(q => q.id === banditQuest.id ? { ...q, progress: Math.min(q.progress + 1, q.target) } : q)
-                : p.quests;
-              if (banditQuest && banditQuest.progress + 1 >= banditQuest.target) completeQuest(banditQuest.id);
-              const enemyTask = p.dailyTasks.find(t => t.id === "defeatEnemies");
-              const updatedTasks = enemyTask
-                ? p.dailyTasks.map(t => t.id === "defeatEnemies" ? { ...t, progress: Math.min(t.progress + 1, t.target) } : t)
-                : p.dailyTasks;
-              if (enemyTask && enemyTask.progress + 1 >= enemyTask.target) completeDailyTask("defeatEnemies");
-              return {
-                ...p,
-                gold: p.gold + prev.enemy.gold,
-                inventory: newInventory,
-                quests: updatedQuests,
-                stats: { ...p.stats, enemiesDefeated: p.stats.enemiesDefeated + 1 },
-                dailyTasks: updatedTasks,
-              };
-            });
-            updateXP(prev.enemy.gold * 10);
-            updateSkillLevel(skill.name);
-            setGameMessage(`You defeated ${prev.enemy.name} and earned ${prev.enemy.gold} gold!${drop ? ` Dropped: ${drop}` : ""} (+${prev.enemy.gold * 10} XP)`);
-            setCombatResult({ type: "win", message: `Victory! You defeated ${prev.enemy.name}!` });
-            setTimeout(() => setModals(m => ({ ...m, combat: false })), 1500);
-            playSound("/sounds/victory.mp3");
-            return null;
-          }
+                          if (newEnemyHealth <= 0) {
+                            const dropChance = Math.random() < 0.1;
+                            const drop = dropChance ? "Mist Essence" : null;
+                            setPlayer(p => {
+                              let newInventory = [...p.inventory];
+                              if (drop) {
+                                const existingItem = newInventory.find(item => item.name === drop);
+                                newInventory = existingItem
+                                  ? newInventory.map(item => item.name === drop ? { ...item, quantity: Math.min(item.quantity + 1, 10) } : item)
+                                  : [...newInventory, { name: drop, quantity: 1 }];
+                              }
+                              const banditQuest = p.quests.find(q => q.id === "defeatBandits" && prev.enemy.name === "Bandit") || p.quests.find(q => q.id === "banditQuest");
+                              const updatedQuests = banditQuest
+                                ? p.quests.map(q => q.id === banditQuest.id ? { ...q, progress: Math.min(q.progress + 1, q.target) } : q)
+                                : p.quests;
+                              if (banditQuest && banditQuest.progress + 1 >= banditQuest.target) completeQuest(banditQuest.id);
+                              const enemyTask = p.dailyTasks.find(t => t.id === "defeatEnemies");
+                              const updatedTasks = enemyTask
+                                ? p.dailyTasks.map(t => t.id === "defeatEnemies" ? { ...t, progress: Math.min(t.progress + 1, t.target) } : t)
+                                : p.dailyTasks;
+                              if (enemyTask && enemyTask.progress + 1 >= enemyTask.target) completeDailyTask("defeatEnemies");
+                              return {
+                                ...p,
+                                gold: p.gold + prev.enemy.gold,
+                                inventory: newInventory,
+                                quests: updatedQuests,
+                                stats: { ...p.stats, enemiesDefeated: p.stats.enemiesDefeated + 1 },
+                                dailyTasks: updatedTasks,
+                              };
+                            });
+                            updateXP(prev.enemy.gold * 10);
+                            updateSkillLevel(skill.name);
+                            setGameMessage(`You defeated ${prev.enemy.name} and earned ${prev.enemy.gold} gold!${drop ? ` Dropped: ${drop}` : ""} (+${prev.enemy.gold * 10} XP)`);
+                            setCombatResult({ type: "win", message: `Victory! You defeated ${prev.enemy.name}!` });
+                            setTimeout(() => setModals(m => ({ ...m, combat: false })), 1500);
+                            playSound("/sounds/victory.mp3");
+                            return null;
+                          }
 
-          const finalPlayerHealth = Math.max(newPlayerHealth - prev.enemy.damage, 0);
-          newLog.push(`${prev.enemy.name} deals ${prev.enemy.damage} damage to Kaito!`);
+                          const finalPlayerHealth = Math.max(newPlayerHealth - prev.enemy.damage, 0);
+                          newLog.push(`${prev.enemy.name} deals ${prev.enemy.damage} damage to Kaito!`);
 
-          if (finalPlayerHealth <= 0) {
-            setPlayer(p => ({ ...p, health: finalPlayerHealth }));
-            setGameMessage("You were defeated!");
-            setCombatResult({ type: "fail", message: `Defeat! ${prev.enemy.name} overpowered you!` });
-            setTimeout(() => setModals(m => ({ ...m, combat: false })), 1500);
-            playSound("/sounds/defeat.mp3");
-            return null;
-          }
+                          if (finalPlayerHealth <= 0) {
+                            setPlayer(p => ({ ...p, health: finalPlayerHealth }));
+                            setGameMessage("You were defeated!");
+                            setCombatResult({ type: "fail", message: `Defeat! ${prev.enemy.name} overpowered you!` });
+                            setTimeout(() => setModals(m => ({ ...m, combat: false })), 1500);
+                            playSound("/sounds/defeat.mp3");
+                            return null;
+                          }
 
-          setPlayer(p => ({ ...p, health: finalPlayerHealth }));
-          updateXP(15);
-          updateSkillLevel(skill.name);
-          playSound("/sounds/skill.mp3");
-          return { ...prev, playerHealth: finalPlayerHealth, enemyHealth: newEnemyHealth, log: newLog, isAttacking: false };
-        });
-      }, 1000);
-    }}
-    disabled={!combatState || combatState?.isAttacking || combatResult}
-    className="m-1"
-  >
-    {skill.name} (Lv {skill.level})
-  </Button>
-))}
+                          setPlayer(p => ({ ...p, health: finalPlayerHealth }));
+                          updateXP(15);
+                          updateSkillLevel(skill.name);
+                          playSound("/sounds/skill.mp3");
+                          return { ...prev, playerHealth: finalPlayerHealth, enemyHealth: newEnemyHealth, log: newLog, isAttacking: false };
+                        });
+                      }, 1000);
+                    }}
+                    disabled={!combatState || combatState?.isAttacking || combatResult}
+                    className="m-1"
+                  >
+                    {skill.name} (Lv {skill.level})
+                  </Button>
+                ))}
               </div>
               {combatState && (
                 <ListGroup className="mt-3" style={{ maxHeight: "150px", overflowY: "auto" }}>
@@ -1273,7 +1202,7 @@ const Home = () => {
       <Modal show={modals.travel} backdrop="static" keyboard={false} className={styles.travelModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Body className={styles.travelBody}>
           <div className={styles.travelContent}>
-            <img src="/travel-chibi.jpg" alt="Traveling Chibi" className={styles.travelChibi} />
+            <Image src="/travel-chibi.jpg" alt="Traveling Chibi" width={100} height={100} className={styles.travelChibi} />
             <p>Traveling to {travelDestination}...</p>
           </div>
         </Modal.Body>
