@@ -160,6 +160,7 @@ const Home = () => {
     }
   }, [defaultPlayerMemo]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const saveToLocalStorage = useCallback(
     debounce(() => {
       if (typeof window !== "undefined") {
@@ -950,7 +951,7 @@ const Home = () => {
                           const newEnemyHealth = Math.max(prev.enemyHealth - (selectedSkill.effect.damage + traitBonus), 0);
                           const newLog = [
                             ...prev.log,
-                            `Kaito uses ${skill.name} for ${selectedSkill.effect.damage + traitBonus} damage${selectedSkill.effect.heal ? ` and heals ${selectedSkill.effect.heal}` : ""}!`
+                            "Kaito uses " + skill.name + " for " + (selectedSkill.effect.damage + traitBonus) + " damage" + (selectedSkill.effect.heal ? " and heals " + selectedSkill.effect.heal : "") + "!"
                           ];
 
                           if (newEnemyHealth <= 0) {
