@@ -160,7 +160,7 @@ const Home = () => {
     }
   }, [defaultPlayerMemo]);
 
-  const saveToLocalStorage = useCallback(() => {
+  const saveToLocalStorage = useCallback(
     debounce(() => {
       if (typeof window !== "undefined") {
         localStorage.setItem("player", JSON.stringify(player));
@@ -169,8 +169,9 @@ const Home = () => {
         localStorage.setItem("lastQueuedGatherTime", lastQueuedGatherTime ? lastQueuedGatherTime.toString() : null);
         localStorage.setItem("townLevels", JSON.stringify(townLevels));
       }
-    }, 500)();
-  }, [player, currentTown, lastGatherTimes, lastQueuedGatherTime, townLevels]);
+    }, 500),
+    [player, currentTown, lastGatherTimes, lastQueuedGatherTime, townLevels]
+  );
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -831,11 +832,11 @@ const Home = () => {
           <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} id="craft-tabs" className="mt-3">
             <Tab eventKey="drinks" title="Drinks">
               <p className="mt-3">Known Sellable Recipes:</p>
-              <ul>{player.recipes.filter(r => r.type === "sell").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")}</li>)}</ul>
+              <ul>{player.recipes.filter(r => r.type === "sell").map(r => <li key={r.name}>{r.name}: ${r.ingredients.join(", ")}</li>)}</ul>
             </Tab>
             <Tab eventKey="weapons" title="Weapons">
               <p className="mt-3">Known Weapon Recipes:</p>
-              <ul>{player.recipes.filter(r => r.type === "equip").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")} (Bonus: +${r.bonus.damage} Damage)</li>)}</ul>
+              <ul>{player.recipes.filter(r => r.type === "equip").map(r => <li key={r.name}>{r.name}: ${r.ingredients.join(", ")} (Bonus: +${r.bonus.damage} Damage)</li>)}</ul>
             </Tab>
           </Tabs>
         </Modal.Body>
