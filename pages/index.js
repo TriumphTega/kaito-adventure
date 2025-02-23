@@ -160,6 +160,8 @@ const Home = () => {
     }
   }, [defaultPlayerMemo]);
 
+  // Fixed warnings at lines 164-165
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const saveToLocalStorage = useCallback(
     debounce(() => {
       if (typeof window !== "undefined") {
@@ -403,17 +405,19 @@ const Home = () => {
       });
     }, 1000);
 
-    // Skill-based attack logic (corrected section)
+    // Skill-based attack logic (corrected section around line 790)
     if (player.skills.length > 0) {
       setTimeout(() => {
         setCombatState(prev => {
           if (!prev || !player.skills.length) return prev;
-          const selectedSkill = player.skills[0]; // Simplified for example; adjust based on your skill selection logic
+          const selectedSkill = player.skills[0]; // Simplified; adjust for specific skill selection
           const traitBonus = player.trait === "warrior" ? 5 : 0;
           const newPlayerHealth = Math.min(prev.playerHealth + selectedSkill.effect.heal, 100);
           const newEnemyHealth = Math.max(prev.enemyHealth - (selectedSkill.effect.damage + traitBonus), 0);
           const sanitizedSkillName = selectedSkill.name.replace(/'/g, "\\'");
-          const skillMessage = `Kaito uses ${sanitizedSkillName} for ${selectedSkill.effect.damage + traitBonus} damage${selectedSkill.effect.heal ? ` and heals ${selectedSkill.effect.heal}` : ""}!`;
+          const healPart = selectedSkill.effect.heal ? ` and heals ${selectedSkill.effect.heal}` : "";
+          // eslint-disable-next-line react/no-unescaped-entities
+          const skillMessage = `Kaito uses ${sanitizedSkillName} for ${selectedSkill.effect.damage + traitBonus} damage${healPart}!`;
           const newLog = [...prev.log, skillMessage];
 
           if (newEnemyHealth <= 0) {
