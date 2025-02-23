@@ -949,9 +949,10 @@ const Home = () => {
                           const traitBonus = player.trait === "warrior" ? 5 : 0;
                           const newPlayerHealth = Math.min(prev.playerHealth + selectedSkill.effect.heal, 100);
                           const newEnemyHealth = Math.max(prev.enemyHealth - (selectedSkill.effect.damage + traitBonus), 0);
+                          const sanitizedSkillName = skill.name.replace(/'/g, "\\'");
                           const newLog = [
                             ...prev.log,
-                            "Kaito uses " + skill.name + " for " + (selectedSkill.effect.damage + traitBonus) + " damage" + (selectedSkill.effect.heal ? " and heals " + selectedSkill.effect.heal : "") + "!"
+                            "Kaito uses " + sanitizedSkillName + " for " + (selectedSkill.effect.damage + traitBonus) + " damage" + (selectedSkill.effect.heal ? " and heals " + selectedSkill.effect.heal : "") + "!"
                           ];
 
                           if (newEnemyHealth <= 0) {
@@ -1176,4 +1177,4 @@ const Home = () => {
   );
 };
 
-export default Home; 
+export default Home;
