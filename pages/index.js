@@ -950,9 +950,10 @@ const Home = () => {
                           const newPlayerHealth = Math.min(prev.playerHealth + selectedSkill.effect.heal, 100);
                           const newEnemyHealth = Math.max(prev.enemyHealth - (selectedSkill.effect.damage + traitBonus), 0);
                           const sanitizedSkillName = skill.name.replace(/'/g, "\\'");
+                          // eslint-disable-next-line react/no-unescaped-entities
                           const newLog = [
                             ...prev.log,
-                            "Kaito uses " + sanitizedSkillName + " for " + (selectedSkill.effect.damage + traitBonus) + " damage" + (selectedSkill.effect.heal ? " and heals " + selectedSkill.effect.heal : "") + "!"
+                            `Kaito uses ${sanitizedSkillName} for ${selectedSkill.effect.damage + traitBonus} damage${selectedSkill.effect.heal ? ` and heals ${selectedSkill.effect.heal}` : ""}!`
                           ];
 
                           if (newEnemyHealth <= 0) {
@@ -966,11 +967,11 @@ const Home = () => {
                                   ? newInventory.map(item => item.name === drop ? { ...item, quantity: Math.min(item.quantity + 1, 10) } : item)
                                   : [...newInventory, { name: drop, quantity: 1 }];
                               }
-                              const banditQuest = p.quests.find(q => q.id === "defeatBandits" && prev.enemy.name === "Bandit") || p.quests.find(q => q.id === "banditQuest");
+                              const banditQuest = p.quests.find(q => q.id === "banditQuest" && prev.enemy.name === "Bandit");
                               const updatedQuests = banditQuest
-                                ? p.quests.map(q => q.id === banditQuest.id ? { ...q, progress: Math.min(q.progress + 1, q.target) } : q)
+                                ? p.quests.map(q => q.id === "banditQuest" ? { ...q, progress: Math.min(q.progress + 1, q.target) } : q)
                                 : p.quests;
-                              if (banditQuest && banditQuest.progress + 1 >= banditQuest.target) completeQuest(banditQuest.id);
+                              if (banditQuest && banditQuest.progress + 1 >= banditQuest.target) completeQuest("banditQuest");
                               const enemyTask = p.dailyTasks.find(t => t.id === "defeatEnemies");
                               const updatedTasks = enemyTask
                                 ? p.dailyTasks.map(t => t.id === "defeatEnemies" ? { ...t, progress: Math.min(t.progress + 1, t.target) } : t)
