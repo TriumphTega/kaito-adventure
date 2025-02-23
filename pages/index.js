@@ -829,14 +829,14 @@ const Home = () => {
               />
             ))}
           </Form>
-          <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} id="craft-tabs" className="mt-3">
+          <Tabs activeKey={activeTab} onSelect={k => setActiveTab(k)} id="craft-tabs" className="mt-3">
             <Tab eventKey="drinks" title="Drinks">
               <p className="mt-3">Known Sellable Recipes:</p>
-              <ul>{player.recipes.filter(r => r.type === "sell").map(r => <li key={r.name}>{r.name}: ${r.ingredients.join(", ")}</li>)}</ul>
+              <ul>{player.recipes.filter(r => r.type === "sell").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")}</li>)}</ul>
             </Tab>
             <Tab eventKey="weapons" title="Weapons">
               <p className="mt-3">Known Weapon Recipes:</p>
-              <ul>{player.recipes.filter(r => r.type === "equip").map(r => <li key={r.name}>{r.name}: ${r.ingredients.join(", ")} (Bonus: +${r.bonus.damage} Damage)</li>)}</ul>
+              <ul>{player.recipes.filter(r => r.type === "equip").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")} (Bonus: +{r.bonus.damage} Damage)</li>)}</ul>
             </Tab>
           </Tabs>
         </Modal.Body>
@@ -863,7 +863,7 @@ const Home = () => {
             ))}
           </Form>
           <p className="mt-3">Known Healing Recipes:</p>
-          <ul>{player.recipes.filter(r => r.type === "heal").map(r => <li key={r.name}>{r.name}: ${r.ingredients.join(", ")} (Heals ${r.healAmount} HP)</li>)}</ul>
+          <ul>{player.recipes.filter(r => r.type === "heal").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")} (Heals {r.healAmount} HP)</li>)}</ul>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => toggleModal("healing")}>Cancel</Button>
@@ -872,12 +872,12 @@ const Home = () => {
       </Modal>
 
       <Modal show={modals.gather} onHide={() => toggleModal("gather")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Gather Options in ${currentTown}</Modal.Title></Modal.Header>
+        <Modal.Header closeButton><Modal.Title>Gather Options in {currentTown}</Modal.Title></Modal.Header>
         <Modal.Body>
           <Card className="mb-3">
             <Card.Body>
               <Card.Title>Normal Gather</Card.Title>
-              <Card.Text>Gather one ingredient for free (cooldown varies by town). ${weather.gatherBonus ? `Bonus: ${weather.gatherBonus.chance * 100}% chance for ${weather.gatherBonus.ingredient}` : ""}</Card.Text>
+              <Card.Text>Gather one ingredient for free (cooldown varies by town). {weather.gatherBonus ? `Bonus: ${weather.gatherBonus.chance * 100}% chance for ${weather.gatherBonus.ingredient}` : ""}</Card.Text>
               <Button variant="warning" onClick={gatherSingle} disabled={countdown > 0}>Gather Now</Button>
             </Card.Body>
           </Card>
@@ -886,7 +886,7 @@ const Home = () => {
               <Card.Title>Queue Gathers for Gold</Card.Title>
               <Card.Text>Pay 1 gold per gather, up to 5 (3-minute global cooldown).</Card.Text>
               <div>
-                ${[1, 2, 3, 4, 5].map(count => (
+                {[1, 2, 3, 4, 5].map(count => (
                   <Button
                     key={count}
                     variant="outline-warning"
@@ -894,7 +894,7 @@ const Home = () => {
                     onClick={() => queueGathers(count)}
                     disabled={player.gold < count || queuedCountdown > 0}
                   >
-                    ${count} (${count} gold)
+                    {count} ({count} gold)
                   </Button>
                 ))}
               </div>
@@ -909,30 +909,30 @@ const Home = () => {
           <Card className="border-0">
             <Card.Header className="bg-danger text-center text-white"><h3>Combat Arena</h3></Card.Header>
             <Card.Body className={styles.combatBody}>
-              ${combatState && (
+              {combatState && (
                 <Row>
                   <Col md={5} className="text-center">
                     <h4>Kaito</h4>
                     <div className={`${styles.healthBar} mb-3`}>
                       <div className={styles.healthFill} style={{ width: `${(combatState.playerHealth / 100) * 100}%` }} />
                     </div>
-                    <p>Health: ${combatState.playerHealth}/100</p>
+                    <p>Health: {combatState.playerHealth}/100</p>
                     <div className={combatState.isAttacking ? styles.attacking : ""}>[Kaito Placeholder]</div>
                   </Col>
                   <Col md={2} className="align-items-center d-flex justify-content-center"><h2>VS</h2></Col>
                   <Col md={5} className="text-center">
-                    <h4>${combatState.enemy.name}</h4>
+                    <h4>{combatState.enemy.name}</h4>
                     <div className={`${styles.healthBar} mb-3`}>
                       <div className={styles.healthFill} style={{ width: `${(combatState.enemyHealth / combatState.enemy.health) * 100}%` }} />
                     </div>
-                    <p>Health: ${combatState.enemyHealth}/${combatState.enemy.health}</p>
+                    <p>Health: {combatState.enemyHealth}/{combatState.enemy.health}</p>
                     <div className={combatState.isAttacking ? styles.enemyHit : ""}>[Enemy Placeholder]</div>
                   </Col>
                 </Row>
               )}
               <div className="mt-3 text-center">
                 <Button variant="danger" onClick={attackEnemy} disabled={!combatState || combatState?.isAttacking || combatResult} className="m-1">Attack</Button>
-                ${player.skills.map(skill => (
+                {player.skills.map(skill => (
                   <Button
                     key={skill.name}
                     variant="outline-danger"
@@ -1012,18 +1012,18 @@ const Home = () => {
                     disabled={!combatState || combatState?.isAttacking || combatResult}
                     className="m-1"
                   >
-                    ${skill.name} (Lv ${skill.level})
+                    {skill.name} (Lv {skill.level})
                   </Button>
                 ))}
               </div>
-              ${combatState && (
+              {combatState && (
                 <ListGroup className="mt-3" style={{ maxHeight: "150px", overflowY: "auto" }}>
-                  ${combatState.log.map((entry, idx) => <ListGroup.Item key={idx}>${entry}</ListGroup.Item>)}
+                  {combatState.log.map((entry, idx) => <ListGroup.Item key={idx}>{entry}</ListGroup.Item>)}
                 </ListGroup>
               )}
-              ${combatResult && (
+              {combatResult && (
                 <Alert variant={combatResult.type === "win" ? "success" : "danger"} className={styles.combatResult}>
-                  ${combatResult.message}
+                  {combatResult.message}
                 </Alert>
               )}
             </Card.Body>
@@ -1035,18 +1035,18 @@ const Home = () => {
       </Modal>
 
       <Modal show={modals.market} onHide={() => toggleModal("market")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>${currentTown} Market</Modal.Title></Modal.Header>
+        <Modal.Header closeButton><Modal.Title>{currentTown} Market</Modal.Title></Modal.Header>
         <Modal.Body>
           <h5>Sell Your Drinks:</h5>
           <ListGroup className="mb-3">
-            ${player.inventory.filter(item => player.recipes.some(r => r.name === item.name && r.type === "sell")).map(item => {
+            {player.inventory.filter(item => player.recipes.some(r => r.name === item.name && r.type === "sell")).map(item => {
               const recipe = player.recipes.find(r => r.name === item.name);
               const townData = towns.find(t => t.name === currentTown);
               const demandMultiplier = (townData.demand[item.name] || 1.0) * (currentEvent?.type === "festival" ? 1.5 : 1);
               const price = Math.floor(recipe.baseGold * townData.rewardMultiplier * demandMultiplier * townLevels[currentTown]);
               return (
                 <ListGroup.Item key={item.name} className="align-items-center d-flex justify-content-between">
-                  <span>${item.name}: ${item.quantity} (Sells for ${price} gold each)</span>
+                  <span>{item.name}: {item.quantity} (Sells for {price} gold each)</span>
                   <Button variant="outline-success" size="sm" onClick={() => sellDrink(item.name)} disabled={item.quantity === 0}>Sell One</Button>
                 </ListGroup.Item>
               );
@@ -1054,9 +1054,9 @@ const Home = () => {
           </ListGroup>
           <h5>NPC Buyers:</h5>
           <ListGroup>
-            ${towns.find(t => t.name === currentTown).npcOffers.map((offer, idx) => (
+            {towns.find(t => t.name === currentTown).npcOffers.map((offer, idx) => (
               <ListGroup.Item key={idx} className="align-items-center d-flex justify-content-between">
-                <span>${offer.ingredient} (Buy for ${Math.floor(offer.price / townLevels[currentTown])} gold)</span>
+                <span>{offer.ingredient} (Buy for {Math.floor(offer.price / townLevels[currentTown])} gold)</span>
                 <Button
                   variant="outline-primary"
                   size="sm"
@@ -1074,10 +1074,10 @@ const Home = () => {
       </Modal>
 
       <Modal show={modals.npc} onHide={() => toggleModal("npc")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Talk to ${selectedNPC?.name}</Modal.Title></Modal.Header>
+        <Modal.Header closeButton><Modal.Title>Talk to {selectedNPC?.name}</Modal.Title></Modal.Header>
         <Modal.Body>
-          <p>${selectedNPC?.dialogue}</p>
-          ${selectedNPC?.quest && !player.quests.some(q => q.id === selectedNPC.quest.id) && (
+          <p>{selectedNPC?.dialogue}</p>
+          {selectedNPC?.quest && !player.quests.some(q => q.id === selectedNPC.quest.id) && (
             <Button variant="primary" onClick={() => addQuest(selectedNPC.quest)}>Accept Quest</Button>
           )}
         </Modal.Body>
@@ -1090,11 +1090,11 @@ const Home = () => {
           <p>Daily Login Bonus: 20 Gold (Claimed today)</p>
           <h5>Challenges:</h5>
           <ListGroup variant="flush">
-            ${player.dailyTasks.map(task => (
+            {player.dailyTasks.map(task => (
               <ListGroup.Item key={task.id}>
-                ${task.description} - ${task.progress}/${task.target}<br />
-                Reward: ${task.reward.gold ? `${task.reward.gold} Gold` : ""} ${task.reward.xp ? `${task.reward.xp} XP` : ""}
-                ${task.completed && " (Completed)"}
+                {task.description} - {task.progress}/{task.target}<br />
+                Reward: {task.reward.gold ? `${task.reward.gold} Gold` : ""} {task.reward.xp ? `${task.reward.xp} XP` : ""}
+                {task.completed && " (Completed)"}
               </ListGroup.Item>
             ))}
           </ListGroup>
@@ -1106,13 +1106,13 @@ const Home = () => {
         <Modal.Header closeButton><Modal.Title>Lifetime Stats</Modal.Title></Modal.Header>
         <Modal.Body>
           <ListGroup variant="flush">
-            <ListGroup.Item>Enemies Defeated: ${player.stats.enemiesDefeated}</ListGroup.Item>
-            <ListGroup.Item>Potions Crafted: ${player.stats.potionsCrafted}</ListGroup.Item>
-            <ListGroup.Item>Items Sold: ${player.stats.itemsSold}</ListGroup.Item>
-            <ListGroup.Item>Gathers Performed: ${player.stats.gathers}</ListGroup.Item>
+            <ListGroup.Item>Enemies Defeated: {player.stats.enemiesDefeated}</ListGroup.Item>
+            <ListGroup.Item>Potions Crafted: {player.stats.potionsCrafted}</ListGroup.Item>
+            <ListGroup.Item>Items Sold: {player.stats.itemsSold}</ListGroup.Item>
+            <ListGroup.Item>Gathers Performed: {player.stats.gathers}</ListGroup.Item>
             <ListGroup.Item>Skills:
-              ${player.skills.map(skill => (
-                <div key={skill.name}>${skill.name} - Level ${skill.level} (Uses: ${skill.uses})</div>
+              {player.skills.map(skill => (
+                <div key={skill.name}>{skill.name} - Level {skill.level} (Uses: {skill.uses})</div>
               ))}
             </ListGroup.Item>
           </ListGroup>
@@ -1123,7 +1123,7 @@ const Home = () => {
       <Modal show={modals.community} onHide={() => toggleModal("community")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Header closeButton><Modal.Title>Community Events</Modal.Title></Modal.Header>
         <Modal.Body>
-          <p>${mockCommunityEvent().description}</p>
+          <p>{mockCommunityEvent().description}</p>
           <Button variant="primary" onClick={mockCommunityEvent().action}>Perform Action</Button>
         </Modal.Body>
         <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("community")}>Close</Button></Modal.Footer>
@@ -1167,7 +1167,7 @@ const Home = () => {
         <Modal.Body className={styles.travelBody}>
           <div className={styles.travelContent}>
             <Image src="/travel-chibi.jpg" alt="Traveling Chibi" width={100} height={100} className={styles.travelChibi} />
-            <p>Traveling to ${travelDestination}...</p>
+            <p>Traveling to {travelDestination}...</p>
           </div>
         </Modal.Body>
       </Modal>
