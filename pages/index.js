@@ -38,9 +38,11 @@ const defaultPlayer = {
     { name: "Spicy Sake", ingredients: ["Water", "Pepper"], type: "sell", baseGold: 20 },
     { name: "Mist Potion", ingredients: ["Mist Essence", "Herbs"], type: "sell", baseGold: 20 },
     { name: "Golden Elixir", ingredients: ["Golden Herb", "Mist Essence"], type: "sell", baseGold: 50 },
-    { name: "Weak Healing Potion", ingredients: ["Water", "Herbs"], type: "heal", healPercent: 0.2 }, // No inventory storage
-    { name: "Medium Healing Potion", ingredients: ["Water", "Mist Essence"], type: "heal", healPercent: 0.4 },
-    { name: "Strong Healing Potion", ingredients: ["Mist Essence", "Shadow Root"], type: "heal", healPercent: 0.6 },
+    { name: "Weak Healing Potion", ingredients: ["Water", "Herbs"], type: "heal", healPercent: 0.2, sellValue: 15 },
+    { name: "Medium Healing Potion", ingredients: ["Water", "Mist Essence"], type: "heal", healPercent: 0.4, sellValue: 25 },
+    { name: "Strong Healing Potion", ingredients: ["Mist Essence", "Shadow Root"], type: "heal", healPercent: 0.6, sellValue: 40 },
+    { name: "Lucky Gather Potion", ingredients: ["Herbs", "Golden Herb"], type: "gather", effect: { rareChanceBoost: 0.1, duration: 300000 } }, // +10% rare drop chance, 5 min
+    { name: "Swift Gather Potion", ingredients: ["Pepper", "Mist Essence"], type: "gather", effect: { cooldownReduction: 0.2, duration: 300000 } }, // -20% cooldown, 5 min
     { name: "Combat Blade", ingredients: ["Iron Ore", "Wood"], type: "equip", bonus: { damage: 5 } },
     { name: "Steel Axe", ingredients: ["Iron Ore", "Iron Ore"], type: "equip", bonus: { damage: 8 } },
     { name: "Shadow Dagger", ingredients: ["Shadow Root", "Iron Ore"], type: "equip", bonus: { damage: 6 } },
@@ -67,7 +69,7 @@ const towns = [
   {
     name: "Sakura Village",
     ingredients: ["Water", "Herbs", "Wood"],
-    rareIngredients: [{ name: "Golden Herb", chance: 0.01 }], // New: Rare drops
+    rareIngredients: [{ name: "Golden Herb", chance: 0.1 }], // New: Rare drops
     gatherCooldown: 0.5,
     rewardMultiplier: 1,
     demand: { "Herbal Tea": 1.0, "Spicy Sake": 0.8, "Mist Potion": 0.5, "Golden Elixir": 1.5 },
@@ -79,7 +81,7 @@ const towns = [
   {
     name: "Iron Port",
     ingredients: ["Pepper", "Sugar", "Iron Ore"],
-    rareIngredients: [{ name: "Iron Shard", chance: 0.02 }],
+    rareIngredients: [{ name: "Iron Shard", chance: 0.1 }],
     gatherCooldown: 1,
     rewardMultiplier: 2,
     demand: { "Herbal Tea": 0.7, "Spicy Sake": 1.2, "Mist Potion": 0.9, "Golden Elixir": 1.2 },
@@ -91,7 +93,7 @@ const towns = [
   {
     name: "Mist Hollow",
     ingredients: ["Mist Essence", "Shadow Root"],
-    rareIngredients: [{ name: "Mist Crystal", chance: 0.03 }],
+    rareIngredients: [{ name: "Mist Crystal", chance: 0.2 }],
     gatherCooldown: 2,
     rewardMultiplier: 4,
     demand: { "Herbal Tea": 0.6, "Spicy Sake": 0.9, "Mist Potion": 1.5, "Golden Elixir": 1.8 },
@@ -104,6 +106,8 @@ const towns = [
 
 const allIngredients = ["Water", "Herbs", "Pepper", "Sugar", "Mist Essence", "Shadow Root", "Iron Ore", "Wood", "Golden Herb", "Iron Shard", "Mist Crystal"];
 const rareItems = ["Golden Herb", "Iron Shard", "Mist Crystal"];
+
+
 
 const weatherTypes = [
   { type: "sunny", gatherBonus: null, combatModifier: 1.0, demandBonus: { "Spicy Sake": 1.1 } },
@@ -172,6 +176,7 @@ const Home = () => {
   const [eventTimer, setEventTimer] = useState(null);
   const [selectedNPC, setSelectedNPC] = useState(null);
   const [travelDestination, setTravelDestination] = useState(null);
+  const [gatherBuff, setGatherBuff] = useState(null); // Added for gathering potions
 
   // ---- Persistence ----
   useEffect(() => {
@@ -402,6 +407,116 @@ const Home = () => {
       };
     });
   }, [player.inventory]);
+
+
+  const craftItem = useCallback((type, onSuccess) => {
+    const recipe = player.recipes.find(r =>
+      r.type === type &&
+      r.ingredients.every(ing => selectedIngredients.includes(ing)) &&
+      r.ingredients.length === selectedIngredients.length &&
+      (!r.unlockLevel || player.level >= r.unlockLevel)
+    );
+    if (!recipe) {
+      setGameMessage(`No matching ${type === "heal" ? "healing potion" : type === "gather" ? "gathering potion" : "item"} recipe for these ingredients${type !== "heal" && type !== "gather" && player.level < 10 ? " or level too low" : ""}!`);
+      return;
+    }
+
+    const available = getAvailableIngredients;
+    const hasEnough = recipe.ingredients.every(ing => {
+      const item = available.find(i => i.name === ing);
+      return item && item.owned && item.quantity > 0;
+    });
+    if (!hasEnough) {
+      setGameMessage("You don’t have enough of the required ingredients!");
+      return;
+    }
+
+    setPlayer(prev => {
+      const costReduction = prev.skills.some(s => s.name === "Efficient Brewing") ? prev.skills.find(s => s.name === "Efficient Brewing").effect.costReduction : 0;
+      const newInventory = prev.inventory.map(item =>
+        recipe.ingredients.includes(item.name) ? { ...item, quantity: item.quantity - (Math.random() < costReduction ? 0 : 1) } : item
+      ).filter(item => item.quantity > 0);
+
+      const task = prev.dailyTasks.find(t => t.description === "Craft 3 potions");
+      const updatedTasks = task
+        ? prev.dailyTasks.map(t => t.description === "Craft 3 potions" ? { ...t, progress: Math.min(t.progress + 1, t.target) } : t)
+        : prev.dailyTasks;
+      if (task && task.progress + 1 >= task.target) completeDailyTask("craftPotions");
+
+      const traitBonus = player.trait === "craftsman" ? 0.1 : 0;
+      const successChance = 0.8 + traitBonus;
+      const isSuccess = Math.random() < successChance;
+
+      if (isSuccess) {
+        const existingItem = prev.inventory.find(item => item.name === recipe.name);
+        const updatedInventory = existingItem
+          ? newInventory.map(item => item.name === recipe.name ? { ...item, quantity: Math.min(item.quantity + 1, prev.inventorySlots) } : item)
+          : [...newInventory, { name: recipe.name, quantity: 1 }];
+        const bladeQuest = prev.quests.find(q => q.id === "bladeQuest" && recipe.name === "Combat Blade");
+        const updatedQuests = bladeQuest
+          ? prev.quests.map(q => q.id === "bladeQuest" ? { ...q, progress: Math.min(q.progress + 1, q.target) } : q)
+          : prev.quests;
+
+        if (recipe.type === "gather") {
+          setGatherBuff({
+            type: recipe.effect.rareChanceBoost ? "rareChanceBoost" : "cooldownReduction",
+            value: recipe.effect.rareChanceBoost || recipe.effect.cooldownReduction,
+            expires: Date.now() + recipe.effect.duration,
+          });
+          setGameMessage(`You crafted ${recipe.name}! It’s in your inventory and boosts gathering for ${recipe.effect.duration / 60000} minutes!`);
+        }
+
+        return {
+          ...prev,
+          inventory: updatedInventory,
+          stats: { ...prev.stats, potionsCrafted: prev.stats.potionsCrafted + 1 },
+          dailyTasks: updatedTasks,
+          quests: updatedQuests,
+        };
+      }
+      return { ...prev, inventory: newInventory };
+    });
+
+    const isSuccess = Math.random() < (0.8 + (player.trait === "craftsman" ? 0.1 : 0));
+    if (isSuccess) {
+      updateXP(type === "heal" || type === "gather" ? 10 : 20);
+      if (recipe.type !== "gather") {
+        setGameMessage(`You crafted ${recipe.name}! It is now in your inventory. (+${type === "heal" || type === "gather" ? 10 : 20} XP)`);
+      }
+    } else {
+      setGameMessage(`Crafting ${recipe.name} failed! Ingredients lost.`);
+    }
+
+    setSelectedIngredients([]);
+    setModals(prev => ({ ...prev, [type === "heal" || type === "gather" ? "craft" : "craft"]: false }));
+    if (onSuccess && type !== "heal" && type !== "gather") onSuccess(recipe);
+  }, [player.recipes, player.trait, player.skills, player.inventorySlots, player.level, selectedIngredients, getAvailableIngredients, updateXP, completeDailyTask, completeQuest, setGameMessage, setModals, setSelectedIngredients]);
+
+  // After craftItem
+const useGatherPotion = useCallback((potionName) => {
+  const potion = player.inventory.find(item => item.name === potionName);
+  if (!potion || potion.quantity === 0) {
+    setGameMessage("You don’t have this potion!");
+    return;
+  }
+  const recipe = player.recipes.find(r => r.name === potionName && r.type === "gather");
+  if (!recipe) {
+    setGameMessage("This isn’t a gathering potion!");
+    return;
+  }
+  setPlayer(prev => ({
+    ...prev,
+    inventory: prev.inventory.map(item => item.name === potionName ? { ...item, quantity: item.quantity - 1 } : item).filter(item => item.quantity > 0),
+  }));
+  setGatherBuff({
+    type: recipe.effect.rareChanceBoost ? "rareChanceBoost" : "cooldownReduction",
+    value: recipe.effect.rareChanceBoost || recipe.effect.cooldownReduction,
+    expires: Date.now() + recipe.effect.duration,
+  });
+  setGameMessage(`Used ${potionName}! Gathering boosted for ${recipe.effect.duration / 60000} minutes.`);
+}, [player.inventory, player.recipes]);
+
+
   
 // ---- Combat ----
 const startCombat = useCallback(() => {
@@ -553,6 +668,19 @@ const craftPotionInCombat = useCallback((potionName) => {
   }, 1000);
 }, [combatState, player.recipes, player.skills, player.inventory, player.maxHealth, getAvailableIngredients]);
 
+//use effect?
+
+useEffect(() => {
+  const checkBuffExpiration = () => {
+    if (gatherBuff && Date.now() >= gatherBuff.expires) {
+      setGatherBuff(null);
+      setGameMessage("Your gathering potion effect has worn off!");
+    }
+  };
+  const interval = setInterval(checkBuffExpiration, 1000);
+  return () => clearInterval(interval);
+}, [gatherBuff]);
+
     // ---- Leaderboard ----
     const fetchLeaderboardData = useCallback(() => {
       const mockPlayers = [
@@ -603,22 +731,22 @@ const craftPotionInCombat = useCallback((potionName) => {
     
   // ---- Market ----
   const sellDrink = useCallback((drinkName) => {
-    const recipe = player.recipes.find(r => r.name === drinkName && r.type === "sell");
-    if (!recipe) {
+    const recipe = player.recipes.find(r => (r.type === "sell" || r.type === "heal") && r.name === drinkName);
+    if (!recipe || !recipe.sellValue) {
       setGameMessage("This item cannot be sold!");
       return;
     }
-
+  
     const drinkInInventory = player.inventory.find(item => item.name === drinkName);
     if (!drinkInInventory || drinkInInventory.quantity === 0) {
-      setGameMessage("You don’t have any of this drink to sell!");
+      setGameMessage("You don’t have any of this item to sell!");
       return;
     }
-
+  
     const currentTownData = towns.find(t => t.name === currentTown);
     const demandMultiplier = (currentTownData.demand[drinkName] || 1.0) * (currentEvent?.type === "festival" ? 1.5 : 1) * (weather.demandBonus[drinkName] || 1);
-    const reward = Math.floor(recipe.baseGold * currentTownData.rewardMultiplier * demandMultiplier);
-
+    const reward = Math.floor(recipe.sellValue * currentTownData.rewardMultiplier * demandMultiplier);
+  
     setPlayer(prev => {
       const sellTask = prev.weeklyTasks.find(t => t.description === "Sell 10 Spicy Sakes" && drinkName === "Spicy Sake");
       const updatedWeeklyTasks = sellTask
@@ -637,21 +765,6 @@ const craftPotionInCombat = useCallback((potionName) => {
     upgradeTown(currentTown, player.stats.itemsSold + 1);
     setGameMessage(`You sold ${drinkName} for ${reward} gold! (+${reward * 2} XP)`);
   }, [player.inventory, player.recipes, currentTown, currentEvent, weather, updateXP, upgradeTown, player.stats.itemsSold, completeWeeklyTask]);
-
-  const buyIngredient = useCallback((ingredient, price) => {
-    const adjustedPrice = Math.floor(price / townLevels[currentTown]); // Price decreases with town level
-    if (player.gold < adjustedPrice) {
-      setGameMessage("Not enough gold!");
-      return;
-    }
-    setPlayer(prev => {
-      const newInventory = prev.inventory.find(i => i.name === ingredient)
-        ? prev.inventory.map(i => i.name === ingredient ? { ...i, quantity: Math.min(i.quantity + 1, prev.inventorySlots) } : i)
-        : [...prev.inventory, { name: ingredient, quantity: 1 }];
-      return { ...prev, inventory: newInventory, gold: prev.gold - adjustedPrice };
-    });
-    setGameMessage(`You bought ${ingredient} for ${adjustedPrice} gold!`);
-  }, [player.gold, player.inventorySlots, currentTown, townLevels]);
 
   // ---- Inventory Upgrades ----
   const upgradeInventory = useCallback(() => {
@@ -693,102 +806,116 @@ const craftPotionInCombat = useCallback((potionName) => {
   }, []);
   
   // ---- Gathering ----
-  const gatherSingle = useCallback(() => {
-    const town = towns.find(t => t.name === currentTown);
-    const now = Date.now();
-    const cooldownReduction = player.skills.some(s => s.name === "Quick Gather") ? player.skills.find(s => s.name === "Quick Gather").effect.cooldownReduction : 0;
-    if (lastGatherTimes[currentTown] && (now - lastGatherTimes[currentTown]) < town.gatherCooldown * 60 * 1000 * (1 - cooldownReduction)) {
-      setGameMessage("Gather cooldown active!");
-      return;
+
+// Updated gatherSingle
+const gatherSingle = useCallback(() => {
+  const town = towns.find(t => t.name === currentTown);
+  const now = Date.now();
+  const cooldownReduction = (player.skills.some(s => s.name === "Quick Gather") ? player.skills.find(s => s.name === "Quick Gather").effect.cooldownReduction : 0) +
+    (gatherBuff && gatherBuff.type === "cooldownReduction" && now < gatherBuff.expires ? gatherBuff.value : 0);
+  if (lastGatherTimes[currentTown] && (now - lastGatherTimes[currentTown]) < town.gatherCooldown * 60 * 1000 * (1 - cooldownReduction)) {
+    setGameMessage("Gather cooldown active!");
+    return;
+  }
+  const ingredient = currentEvent?.type === "storm" ? null : town.ingredients[Math.floor(Math.random() * town.ingredients.length)];
+  if (!ingredient) {
+    setGameMessage("Gathering halted by the storm!");
+    return;
+  }
+  setPlayer(prev => {
+    let newInventory = prev.inventory.find(i => i.name === ingredient)
+      ? prev.inventory.map(i => i.name === ingredient ? { ...i, quantity: Math.min(i.quantity + 1, prev.inventorySlots) } : i)
+      : [...prev.inventory, { name: ingredient, quantity: 1 }];
+    let newRareItems = [...prev.rareItems];
+    const rareChanceBoost = gatherBuff && gatherBuff.type === "rareChanceBoost" && now < gatherBuff.expires ? gatherBuff.value : 0;
+    const rareDrop = town.rareIngredients.find(r => Math.random() < r.chance * (prev.skills.some(s => s.name === "Lucky Find") ? 1 + prev.skills.find(s => s.name === "Lucky Find").effect.rareChance : 1) + rareChanceBoost);
+    if (rareDrop) {
+      newInventory = newInventory.find(i => i.name === rareDrop.name)
+        ? newInventory.map(i => i.name === rareDrop.name ? { ...i, quantity: Math.min(i.quantity + 1, prev.inventorySlots) } : i)
+        : [...newInventory, { name: rareDrop.name, quantity: 1 }];
+      newRareItems.push(rareDrop.name);
+      setGameMessage(`Rare find! You gathered a ${rareDrop.name}!`);
     }
-    const ingredient = currentEvent?.type === "storm" ? null : town.ingredients[Math.floor(Math.random() * town.ingredients.length)];
-    if (!ingredient) {
-      setGameMessage("Gathering halted by the storm!");
-      return;
+    if (weather.gatherBonus && Math.random() < weather.gatherBonus.chance) {
+      const bonusItem = newInventory.find(i => i.name === weather.gatherBonus.ingredient);
+      newInventory = bonusItem
+        ? newInventory.map(i => i.name === weather.gatherBonus.ingredient ? { ...i, quantity: Math.min(i.quantity + 1, prev.inventorySlots) } : i)
+        : [...newInventory, { name: weather.gatherBonus.ingredient, quantity: 1 }];
+      setGameMessage(`Weather bonus! You gathered an extra ${weather.gatherBonus.ingredient}!`);
     }
-    setPlayer(prev => {
-      let newInventory = prev.inventory.find(i => i.name === ingredient)
-        ? prev.inventory.map(i => i.name === ingredient ? { ...i, quantity: Math.min(i.quantity + 1, prev.inventorySlots) } : i)
-        : [...prev.inventory, { name: ingredient, quantity: 1 }];
-      let newRareItems = [...prev.rareItems];
-      const rareDrop = town.rareIngredients.find(r => Math.random() < r.chance * (prev.skills.some(s => s.name === "Lucky Find") ? 1 + prev.skills.find(s => s.name === "Lucky Find").effect.rareChance : 1));
-      if (rareDrop) {
-        newInventory = newInventory.find(i => i.name === rareDrop.name)
-          ? newInventory.map(i => i.name === rareDrop.name ? { ...i, quantity: Math.min(i.quantity + 1, prev.inventorySlots) } : i)
-          : [...newInventory, { name: rareDrop.name, quantity: 1 }];
-        newRareItems.push(rareDrop.name);
-        setGameMessage(`Rare find! You gathered a ${rareDrop.name}!`);
-      }
+    const herbQuest = prev.quests.find(q => q.id === "herbQuest" && ingredient === "Herbs");
+    const updatedQuests = herbQuest
+      ? prev.quests.map(q => q.id === herbQuest.id ? { ...q, progress: Math.min(q.progress + 1, q.target) } : q)
+      : prev.quests;
+    if (herbQuest && herbQuest.progress + 1 >= herbQuest.target) completeQuest("herbQuest");
+    return {
+      ...prev,
+      inventory: newInventory,
+      rareItems: newRareItems,
+      quests: updatedQuests,
+      stats: { ...prev.stats, gathers: prev.stats.gathers + 1 },
+    };
+  });
+  setLastGatherTimes(prev => ({ ...prev, [currentTown]: now }));
+  if (!gameMessage.includes("Rare find") && !gameMessage.includes("Weather bonus")) setGameMessage(`You gathered ${ingredient}!`);
+}, [currentTown, lastGatherTimes, weather, completeQuest, player.skills, player.inventorySlots, currentEvent, gatherBuff]);
+
+// Updated queueGathers
+const queueGathers = useCallback((count) => {
+  const town = towns.find(t => t.name === currentTown);
+  const now = Date.now();
+  if (player.gold < count) {
+    setGameMessage("Not enough gold!");
+    return;
+  }
+  if (lastQueuedGatherTime && (now - lastQueuedGatherTime) < 3 * 60 * 1000) {
+    setGameMessage("Queued gather cooldown active!");
+    return;
+  }
+  setPlayer(prev => {
+    let newInventory = [...prev.inventory];
+    let newRareItems = [...prev.rareItems];
+    const rareChanceBoost = gatherBuff && gatherBuff.type === "rareChanceBoost" && now < gatherBuff.expires ? gatherBuff.value : 0;
+    for (let i = 0; i < count; i++) {
+      const ingredient = currentEvent?.type === "storm" ? null : town.ingredients[Math.floor(Math.random() * town.ingredients.length)];
+      if (!ingredient) continue;
+      const existingItem = newInventory.find(item => item.name === ingredient);
+      newInventory = existingItem
+        ? newInventory.map(item => item.name === ingredient ? { ...item, quantity: Math.min(item.quantity + 1, prev.inventorySlots) } : item)
+        : [...newInventory, { name: ingredient, quantity: 1 }];
       if (weather.gatherBonus && Math.random() < weather.gatherBonus.chance) {
         const bonusItem = newInventory.find(i => i.name === weather.gatherBonus.ingredient);
         newInventory = bonusItem
           ? newInventory.map(i => i.name === weather.gatherBonus.ingredient ? { ...i, quantity: Math.min(i.quantity + 1, prev.inventorySlots) } : i)
           : [...newInventory, { name: weather.gatherBonus.ingredient, quantity: 1 }];
-        setGameMessage(`Weather bonus! You gathered an extra ${weather.gatherBonus.ingredient}!`);
       }
-      const herbQuest = prev.quests.find(q => q.id === "herbQuest" && ingredient === "Herbs");
-      const updatedQuests = herbQuest
-        ? prev.quests.map(q => q.id === herbQuest.id ? { ...q, progress: Math.min(q.progress + 1, q.target) } : q)
-        : prev.quests;
-      if (herbQuest && herbQuest.progress + 1 >= herbQuest.target) completeQuest("herbQuest");
-      return {
-        ...prev,
-        inventory: newInventory,
-        rareItems: newRareItems,
-        quests: updatedQuests,
-        stats: { ...prev.stats, gathers: prev.stats.gathers + 1 },
-      };
-    });
-    setLastGatherTimes(prev => ({ ...prev, [currentTown]: now }));
-    if (!gameMessage.includes("Rare find") && !gameMessage.includes("Weather bonus")) setGameMessage(`You gathered ${ingredient}!`);
-  }, [currentTown, lastGatherTimes, weather, completeQuest, player.skills, player.inventorySlots, currentEvent]);
-
-  const queueGathers = useCallback((count) => {
-    const town = towns.find(t => t.name === currentTown);
-    const now = Date.now();
-    if (player.gold < count) {
-      setGameMessage("Not enough gold!");
-      return;
-    }
-    if (lastQueuedGatherTime && (now - lastQueuedGatherTime) < 3 * 60 * 1000) {
-      setGameMessage("Queued gather cooldown active!");
-      return;
-    }
-    setPlayer(prev => {
-      let newInventory = [...prev.inventory];
-      let newRareItems = [...prev.rareItems];
-      for (let i = 0; i < count; i++) {
-        const ingredient = currentEvent?.type === "storm" ? null : town.ingredients[Math.floor(Math.random() * town.ingredients.length)];
-        if (!ingredient) continue;
-        const existingItem = newInventory.find(item => item.name === ingredient);
-        newInventory = existingItem
-          ? newInventory.map(item => item.name === ingredient ? { ...item, quantity: Math.min(item.quantity + 1, prev.inventorySlots) } : item)
-          : [...newInventory, { name: ingredient, quantity: 1 }];
-        if (weather.gatherBonus && Math.random() < weather.gatherBonus.chance) {
-          const bonusItem = newInventory.find(i => i.name === weather.gatherBonus.ingredient);
-          newInventory = bonusItem
-            ? newInventory.map(i => i.name === weather.gatherBonus.ingredient ? { ...i, quantity: Math.min(i.quantity + 1, prev.inventorySlots) } : i)
-            : [...newInventory, { name: weather.gatherBonus.ingredient, quantity: 1 }];
-        }
+      const rareDrop = town.rareIngredients.find(r => Math.random() < r.chance * (prev.skills.some(s => s.name === "Lucky Find") ? 1 + prev.skills.find(s => s.name === "Lucky Find").effect.rareChance : 1) + rareChanceBoost);
+      if (rareDrop) {
+        newInventory = newInventory.find(i => i.name === rareDrop.name)
+          ? newInventory.map(i => i.name === rareDrop.name ? { ...i, quantity: Math.min(i.quantity + 1, prev.inventorySlots) } : i)
+          : [...newInventory, { name: rareDrop.name, quantity: 1 }];
+        newRareItems.push(rareDrop.name);
       }
-      const herbQuest = prev.quests.find(q => q.id === "herbQuest");
-      const updatedQuests = herbQuest
-        ? prev.quests.map(q => q.id === herbQuest.id ? { ...q, progress: Math.min(q.progress + count, q.target) } : q)
-        : prev.quests;
-      if (herbQuest && herbQuest.progress + count >= herbQuest.target) completeQuest("herbQuest");
-      return {
-        ...prev,
-        inventory: newInventory,
-        rareItems: newRareItems,
-        gold: prev.gold - count,
-        quests: updatedQuests,
-        stats: { ...prev.stats, gathers: prev.stats.gathers + count },
-      };
-    });
-    setLastQueuedGatherTime(now);
-    setGameMessage(`You queued ${count} gathers!`);
-  }, [player.gold, player.inventorySlots, lastQueuedGatherTime, currentTown, weather, completeQuest, currentEvent]);
-
+    }
+    const herbQuest = prev.quests.find(q => q.id === "herbQuest");
+    const updatedQuests = herbQuest
+      ? prev.quests.map(q => q.id === herbQuest.id ? { ...q, progress: Math.min(q.progress + count, q.target) } : q)
+      : prev.quests;
+    if (herbQuest && herbQuest.progress + count >= herbQuest.target) completeQuest("herbQuest");
+    return {
+      ...prev,
+      inventory: newInventory,
+      rareItems: newRareItems,
+      gold: prev.gold - count,
+      quests: updatedQuests,
+      stats: { ...prev.stats, gathers: prev.stats.gathers + count },
+    };
+  });
+  setLastQueuedGatherTime(now);
+  setGameMessage(`You queued ${count} gathers!`);
+}, [player.gold, player.inventorySlots, lastQueuedGatherTime, currentTown, weather, completeQuest, currentEvent, gatherBuff]);
+ 
+ 
   // ---- Countdowns ----
   const formatCountdown = useCallback(seconds => {
     const days = Math.floor(seconds / (24 * 3600));
@@ -914,15 +1041,18 @@ const craftPotionInCombat = useCallback((potionName) => {
                 <Button variant="outline-secondary" size="sm" onClick={sortInventory} className="mb-2">Sort Inventory</Button>
                 <Button variant="outline-primary" size="sm" onClick={upgradeInventory} className="mb-2 ml-2">Upgrade Slots (50g)</Button>
                 <ListGroup variant="flush" className="mb-4 mx-auto" style={{ maxWidth: "min(400px, 90vw)", maxHeight: "30vh", overflowY: "auto" }}>
-                  {player.inventory.map(item => (
-                    <ListGroup.Item key={item.name}>
-                      {item.name}: {item.quantity}
-                      {(player.recipes.find(r => r.name === item.name && (r.type === "equip" || r.type === "armor"))) && (
-                        <Button variant="outline-primary" size="sm" className="ml-2" onClick={() => equipItem(item.name)}>Equip</Button>
-                      )}
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
+  {player.inventory.map(item => (
+    <ListGroup.Item key={item.name}>
+      {item.name}: {item.quantity}
+      {(player.recipes.find(r => r.name === item.name && (r.type === "equip" || r.type === "armor"))) && (
+        <Button variant="outline-primary" size="sm" className="ml-2" onClick={() => equipItem(item.name)}>Equip</Button>
+      )}
+      {(player.recipes.find(r => r.name === item.name && r.type === "gather")) && (
+        <Button variant="outline-success" size="sm" className="ml-2" onClick={() => useGatherPotion(item.name)}>Use</Button>
+      )}
+    </ListGroup.Item>
+  ))}
+</ListGroup>
                 <Card.Text>Rare Items: {player.rareItems.join(", ") || "None"}</Card.Text>
                 <Card.Text>Equipped: Weapon: {player.equipment.weapon || "None"} | Armor: {player.equipment.armor || "None"}</Card.Text>
                 <h2 className="mt-4">Available Ingredients in {currentTown}</h2>
@@ -1039,46 +1169,64 @@ const craftPotionInCombat = useCallback((potionName) => {
 </Modal>
 
 <Modal show={modals.craft} onHide={() => toggleModal("craft")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-  <Modal.Header closeButton><Modal.Title>Craft Items</Modal.Title></Modal.Header>
-  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
-    <Form>
-      <h5>Select Ingredients:</h5>
-      {getAvailableIngredients.map(item => (
-        <Form.Check
-          key={item.name}
-          type="checkbox"
-          label={`${item.name} (${item.owned ? item.quantity : "∞"})`}
-          checked={selectedIngredients.includes(item.name)}
-          onChange={() => toggleIngredient(item.name)}
-          disabled={!item.owned || item.quantity === 0}
-        />
-      ))}
-    </Form>
-    <Tabs activeKey={activeTab} onSelect={k => setActiveTab(k)} id="craft-tabs" className="mt-3">
-      <Tab eventKey="drinks" title="Drinks">
-        <p className="mt-3">Known Sellable Recipes:</p>
-        <ul>{player.recipes.filter(r => r.type === "sell").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")}</li>)}</ul>
-      </Tab>
-      <Tab eventKey="weapons" title="Weapons">
-        <p className="mt-3">Known Weapon Recipes:</p>
-        <ul>{player.recipes.filter(r => r.type === "equip").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")} (Bonus: +{r.bonus.damage} Damage)</li>)}</ul>
-      </Tab>
-      <Tab eventKey="armor" title="Armor">
-        <p className="mt-3">Known Armor Recipes (Unlocks at Level 10):</p>
-        <ul>{player.recipes.filter(r => r.type === "armor").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")} (Defense: {r.bonus.defense}) {r.unlockLevel > player.level ? "(Locked)" : ""}</li>)}</ul>
-      </Tab>
-    </Tabs>
-  </Modal.Body>
-  <Modal.Footer>
-    <Button variant="secondary" onClick={() => toggleModal("craft")}>Cancel</Button>
-    <Button variant="primary" onClick={() => craftItem(activeTab === "drinks" ? "sell" : activeTab === "weapons" ? "equip" : "armor")}>Craft</Button>
-  </Modal.Footer>
-</Modal>
+        <Modal.Header closeButton><Modal.Title>Craft Items</Modal.Title></Modal.Header>
+        <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+          <Form>
+            <h5>Select Ingredients:</h5>
+            {getAvailableIngredients.map(item => (
+              <Form.Check
+                key={item.name}
+                type="checkbox"
+                label={`${item.name} (${item.owned ? item.quantity : "∞"})`}
+                checked={selectedIngredients.includes(item.name)}
+                onChange={() => toggleIngredient(item.name)}
+                disabled={!item.owned || item.quantity === 0}
+              />
+            ))}
+          </Form>
+          <Tabs activeKey={activeTab} onSelect={k => setActiveTab(k)} id="craft-tabs" className="mt-3">
+            <Tab eventKey="drinks" title="Drinks">
+              <p className="mt-3">Known Sellable Recipes:</p>
+              <ul>{player.recipes.filter(r => r.type === "sell").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")}</li>)}</ul>
+            </Tab>
+            <Tab eventKey="weapons" title="Weapons">
+              <p className="mt-3">Known Weapon Recipes:</p>
+              <ul>{player.recipes.filter(r => r.type === "equip").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")} (Bonus: +{r.bonus.damage} Damage)</li>)}</ul>
+            </Tab>
+            <Tab eventKey="armor" title="Armor">
+              <p className="mt-3">Known Armor Recipes (Unlocks at Level 10):</p>
+              <ul>{player.recipes.filter(r => r.type === "armor").map(r => <li key={r.name}>{r.name}: {r.ingredients.join(", ")} (Defense: {r.bonus.defense}) {r.unlockLevel > player.level ? "(Locked)" : ""}</li>)}</ul>
+            </Tab>
+            <Tab eventKey="potions" title="Potions">
+              <p className="mt-3">Known Potion Recipes:</p>
+              <ul>
+                {player.recipes.filter(r => r.type === "heal" || r.type === "gather").map(r => (
+                  <li key={r.name}>
+                    {r.name}: {r.ingredients.join(", ")}
+                    {r.type === "heal" && ` (Heal: ${r.healPercent * 100}% HP, Sell: ${r.sellValue} gold)`}
+                    {r.type === "gather" && ` (Effect: ${r.effect.rareChanceBoost ? `+${r.effect.rareChanceBoost * 100}% Rare Chance` : `-${r.effect.cooldownReduction * 100}% Cooldown`}, ${r.effect.duration / 60000} min)`}
+                  </li>
+                ))}
+              </ul>
+            </Tab>
+          </Tabs>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => toggleModal("craft")}>Cancel</Button>
+          <Button variant="primary" onClick={() => {
+            const selectedRecipe = player.recipes.find(r => 
+              r.ingredients.every(ing => selectedIngredients.includes(ing)) && 
+              r.ingredients.length === selectedIngredients.length
+            );
+            craftItem(selectedRecipe ? selectedRecipe.type : activeTab);
+          }}>Craft</Button>
+        </Modal.Footer>
+      </Modal>
 
-<Modal show={modals.healing} onHide={() => toggleModal("healing")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+      <Modal show={modals.healing} onHide={() => toggleModal("healing")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
   <Modal.Header closeButton><Modal.Title>Healing Potions</Modal.Title></Modal.Header>
   <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
-    <p>Healing potions can only be crafted and used during combat from the combat menu.</p>
+    <p>You can craft healing potions for sale in the market in Craft Items, but battle healing potions can only be crafted in combat.</p>
   </Modal.Body>
   <Modal.Footer>
     <Button variant="secondary" onClick={() => toggleModal("healing")}>Close</Button>
@@ -1198,24 +1346,24 @@ const craftPotionInCombat = useCallback((potionName) => {
 </Modal>
 
 <Modal show={modals.market} onHide={() => toggleModal("market")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-  <Modal.Header closeButton><Modal.Title>{currentTown} Market</Modal.Title></Modal.Header>
-  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
-    <h5>Sell Your Drinks:</h5>
-    <ListGroup className="mb-3">
-      {player.inventory.filter(item => player.recipes.some(r => r.name === item.name && r.type === "sell")).map(item => {
-        const recipe = player.recipes.find(r => r.name === item.name);
-        const townData = towns.find(t => t.name === currentTown);
-        const demandMultiplier = (townData.demand[item.name] || 1.0) * (currentEvent?.type === "festival" ? 1.5 : 1) * (weather.demandBonus[item.name] || 1);
-        const price = Math.floor(recipe.baseGold * townData.rewardMultiplier * demandMultiplier);
-        return (
-          <ListGroup.Item key={item.name} className="align-items-center d-flex justify-content-between">
-            <span>{item.name}: {item.quantity} (Sells for {price} gold each)</span>
-            <Button variant="outline-success" size="sm" onClick={() => sellDrink(item.name)} disabled={item.quantity === 0}>Sell One</Button>
-          </ListGroup.Item>
-        );
-      })}
-    </ListGroup>
-    <h5>NPC Buyers:</h5>
+        <Modal.Header closeButton><Modal.Title>{currentTown} Market</Modal.Title></Modal.Header>
+        <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+          <h5>Sell Your Items:</h5>
+          <ListGroup className="mb-3">
+            {player.inventory.filter(item => player.recipes.some(r => r.name === item.name && (r.type === "sell" || r.type === "heal"))).map(item => {
+              const recipe = player.recipes.find(r => r.name === item.name);
+              const townData = towns.find(t => t.name === currentTown);
+              const demandMultiplier = (townData.demand[item.name] || 1.0) * (currentEvent?.type === "festival" ? 1.5 : 1) * (weather.demandBonus[item.name] || 1);
+              const price = Math.floor((recipe.baseGold || recipe.sellValue) * townData.rewardMultiplier * demandMultiplier);
+              return (
+                <ListGroup.Item key={item.name} className="align-items-center d-flex justify-content-between">
+                  <span>{item.name}: {item.quantity} (Sells for {price} gold each)</span>
+                  <Button variant="outline-success" size="sm" onClick={() => sellDrink(item.name)} disabled={item.quantity === 0}>Sell One</Button>
+                </ListGroup.Item>
+              );
+            })}
+          </ListGroup>
+          <h5>NPC Buyers:</h5>
     <ListGroup>
       {towns.find(t => t.name === currentTown).npcOffers.map((offer, idx) => (
         <ListGroup.Item key={idx} className="align-items-center d-flex justify-content-between">
@@ -1224,10 +1372,11 @@ const craftPotionInCombat = useCallback((potionName) => {
         </ListGroup.Item>
       ))}
     </ListGroup>
-    <Button variant="outline-info" className="mt-3" onClick={() => { setSelectedNPC(towns.find(t => t.name === currentTown).npcs[0]); toggleModal("npc"); }}>Talk to NPC</Button>
-  </Modal.Body>
-  <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("market")}>Close</Button></Modal.Footer>
-</Modal>
+
+          <Button variant="outline-info" className="mt-3" onClick={() => { setSelectedNPC(towns.find(t => t.name === currentTown).npcs[0]); toggleModal("npc"); }}>Talk to NPC</Button>
+        </Modal.Body>
+        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("market")}>Close</Button></Modal.Footer>
+      </Modal>
 
 <Modal show={modals.npc} onHide={() => toggleModal("npc")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
   <Modal.Header closeButton><Modal.Title>Talk to {selectedNPC?.name}</Modal.Title></Modal.Header>
