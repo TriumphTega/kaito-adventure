@@ -881,126 +881,127 @@ const craftPotionInCombat = useCallback((potionName) => {
 
   // ---- Render ----
   return (
-    <div style={{ minHeight: "100vh", background: "url('/background.jpg') center/cover" }}>
+    <div style={{ minHeight: "100vh", maxHeight: "100vh", overflowY: "auto", background: "url('/background.jpg') center/cover" }}>
       <Head><title>Kaito's Adventure</title></Head>
-      <Container className="py-5">
+      <Container fluid className="py-3 py-md-5">
         <Button variant="info" style={{ position: "absolute", top: "10px", left: "10px" }} onClick={() => toggleModal("leaderboard")}>Leaderboard</Button>
         <Row className="justify-content-center">
           <Col md={10}>
-            <Card className={`text-center ${styles.gildedCard}`} style={{ background: "rgba(255, 255, 255, 0.9)" }}>
-            <Card.Body className="p-4" style={{ paddingBottom: "60px" }}> {/* Reduced padding */}
-  <Card.Title as="h1" className="mb-3 text-danger">
-    <Image src={`/avatars/${player.avatar}.jpg`} alt="Avatar" width={32} height={32} style={{ marginRight: "10px" }} />
-    {player.name} (Level {player.level})
-  </Card.Title>
-  <Card.Text>Health: {player.health}/{player.maxHealth} | Gold: {player.gold} | XP: {player.xp}</Card.Text>
-  <ProgressBar now={xpProgress} label={`${Math.round(xpProgress)}%`} variant="success" className="my-2" style={{ width: "50%", margin: "0 auto" }} />
-  <Card.Text>Current Town: {currentTown} (Level {townLevels[currentTown]}) | Weather: {weather.type}</Card.Text>
-  {currentEvent && (
-    <Card.Text className="text-warning">
-      {currentEvent.description} {eventTimer ? `(${formatCountdown(Math.max(0, Math.floor((eventTimer - Date.now()) / 1000)))})` : ""}
-    </Card.Text>
-  )}
-  <Card.Text className="mb-4 text-muted">{gameMessage}</Card.Text>
-  <h2>Inventory (Max: {player.inventorySlots})</h2>
-  <Button variant="outline-secondary" size="sm" onClick={sortInventory} className="mb-2">Sort Inventory</Button>
-  <Button variant="outline-primary" size="sm" onClick={upgradeInventory} className="mb-2 ml-2">Upgrade Slots (50g)</Button>
-  <ListGroup variant="flush" className="mb-4 mx-auto" style={{ maxWidth: "400px" }}>
-    {player.inventory.map(item => (
-      <ListGroup.Item key={item.name}>
-        {item.name}: {item.quantity}
-        {(player.recipes.find(r => r.name === item.name && (r.type === "equip" || r.type === "armor"))) && (
-          <Button variant="outline-primary" size="sm" className="ml-2" onClick={() => equipItem(item.name)}>Equip</Button>
-        )}
-      </ListGroup.Item>
-    ))}
-  </ListGroup>
-  <Card.Text>Rare Items: {player.rareItems.join(", ") || "None"}</Card.Text>
-  <Card.Text>Equipped: Weapon: {player.equipment.weapon || "None"} | Armor: {player.equipment.armor || "None"}</Card.Text>
-  <h2 className="mt-4">Available Ingredients in {currentTown}</h2>
-  <ListGroup variant="flush" className="mb-4 mx-auto" style={{ maxWidth: "400px" }}>
-    {getAvailableIngredients.map(item => (
-      <ListGroup.Item key={item.name}>
-        {item.name}: {item.owned ? item.quantity : towns.find(t => t.name === currentTown).ingredients.includes(item.name) ? "∞ (Town)" : "0"}
-      </ListGroup.Item>
-    ))}
-  </ListGroup>
-</Card.Body>
-{/* Bottom Navigation Bar */}
-<div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(255, 255, 255, 0.9)", padding: "5px 0", borderTop: "1px solid #ccc" }}>
-  <Container>
-    <Row className="justify-content-center">
-      <Col xs="auto">
-        <Dropdown>
-          <Dropdown.Toggle variant="primary" size="sm">Craft</Dropdown.Toggle>
-          <Dropdown.Menu>
-            <Dropdown.Item onClick={() => toggleModal("craft")}>Craft Items</Dropdown.Item>
-            <Dropdown.Item onClick={() => toggleModal("healing")}>Craft Healing Potion</Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
-      </Col>
-      <Col xs="auto">
-        <Button variant="danger" size="sm" onClick={startCombat}>Combat</Button>
-      </Col>
-      <Col xs="auto">
-        <Dropdown>
-          <Dropdown.Toggle variant="success" size="sm">Town</Dropdown.Toggle>
-          <Dropdown.Menu>
-            <Dropdown.Item onClick={() => toggleModal("market")}>Visit Market</Dropdown.Item>
-            <Dropdown.Item onClick={() => toggleModal("gather")}>Gather Ingredient</Dropdown.Item>
-            <Dropdown.Header>Travel</Dropdown.Header>
-            {towns.map(town => (
-              <Dropdown.Item
-                key={town.name}
-                onClick={() => travel(town.name)}
-                disabled={currentTown === town.name || modals.travel}
-              >
-                {town.name}
-              </Dropdown.Item>
-            ))}
-          </Dropdown.Menu>
-        </Dropdown>
-      </Col>
-      <Col xs="auto">
-        <Dropdown>
-          <Dropdown.Toggle variant="outline-info" size="sm">Quests ({player.quests.length})</Dropdown.Toggle>
-          <Dropdown.Menu>
-            <Dropdown.Item onClick={() => toggleModal("quests")}>Quests</Dropdown.Item>
-            <Dropdown.Item onClick={() => toggleModal("daily")}>Tasks</Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
-      </Col>
-      <Col xs="auto">
-        <Dropdown>
-          <Dropdown.Toggle variant="outline-secondary" size="sm">Stats</Dropdown.Toggle>
-          <Dropdown.Menu>
-            <Dropdown.Item onClick={() => toggleModal("stats")}>Stats</Dropdown.Item>
-            <Dropdown.Item onClick={() => toggleModal("skills")}>Skills</Dropdown.Item>
-            <Dropdown.Item onClick={() => toggleModal("leaderboard")}>Leaderboard</Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
-      </Col>
-      <Col xs="auto">
-        <Dropdown>
-          <Dropdown.Toggle variant="outline-dark" size="sm">More</Dropdown.Toggle>
-          <Dropdown.Menu>
-            <Dropdown.Item onClick={() => toggleModal("community")}>Community</Dropdown.Item>
-            <Dropdown.Item onClick={() => toggleModal("customize")}>Customize</Dropdown.Item>
-            <Dropdown.Item onClick={() => toggleModal("events")}>Events</Dropdown.Item>
-            <Dropdown.Item onClick={() => toggleModal("guild")}>Guild {player.guild ? `(${player.guild.name})` : ""}</Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
-      </Col>
-    </Row>
-    {countdown !== null && countdown > 0 && <p className="mt-1 text-center" style={{ fontSize: "12px" }}>Gather: {formatCountdown(countdown)}</p>}
-    {queuedCountdown !== null && queuedCountdown > 0 && <p className="mt-1 text-center" style={{ fontSize: "12px" }}>Queued: {formatCountdown(queuedCountdown)}</p>}
-  </Container>
-</div>
+            <Card className={`text-center ${styles.gildedCard}`} style={{ background: "rgba(255, 255, 255, 0.9)", maxHeight: "80vh", overflowY: "auto" }}>
+              <Card.Body className="p-3" style={{ paddingBottom: "clamp(2rem, 5vh, 4rem)" }}>
+                <Card.Title as="h1" className="mb-3 text-danger" style={{ fontSize: "clamp(1.5rem, 4vw, 2.5rem)" }}>
+                  <Image src={`/avatars/${player.avatar}.jpg`} alt="Avatar" width={32} height={32} style={{ marginRight: "10px" }} />
+                  {player.name} (Level {player.level})
+                </Card.Title>
+                <Card.Text>Health: {player.health}/{player.maxHealth} | Gold: {player.gold} | XP: {player.xp}</Card.Text>
+                <ProgressBar now={xpProgress} label={`${Math.round(xpProgress)}%`} variant="success" className="my-2" style={{ width: "50%", margin: "0 auto" }} />
+                <Card.Text>Current Town: {currentTown} (Level {townLevels[currentTown]}) | Weather: {weather.type}</Card.Text>
+                {currentEvent && (
+                  <Card.Text className="text-warning">
+                    {currentEvent.description} {eventTimer ? `(${formatCountdown(Math.max(0, Math.floor((eventTimer - Date.now()) / 1000)))})` : ""}
+                  </Card.Text>
+                )}
+                <Card.Text className="mb-4 text-muted">{gameMessage}</Card.Text>
+                <h2>Inventory (Max: {player.inventorySlots})</h2>
+                <Button variant="outline-secondary" size="sm" onClick={sortInventory} className="mb-2">Sort Inventory</Button>
+                <Button variant="outline-primary" size="sm" onClick={upgradeInventory} className="mb-2 ml-2">Upgrade Slots (50g)</Button>
+                <ListGroup variant="flush" className="mb-4 mx-auto" style={{ maxWidth: "min(400px, 90vw)", maxHeight: "30vh", overflowY: "auto" }}>
+                  {player.inventory.map(item => (
+                    <ListGroup.Item key={item.name}>
+                      {item.name}: {item.quantity}
+                      {(player.recipes.find(r => r.name === item.name && (r.type === "equip" || r.type === "armor"))) && (
+                        <Button variant="outline-primary" size="sm" className="ml-2" onClick={() => equipItem(item.name)}>Equip</Button>
+                      )}
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+                <Card.Text>Rare Items: {player.rareItems.join(", ") || "None"}</Card.Text>
+                <Card.Text>Equipped: Weapon: {player.equipment.weapon || "None"} | Armor: {player.equipment.armor || "None"}</Card.Text>
+                <h2 className="mt-4">Available Ingredients in {currentTown}</h2>
+                <ListGroup variant="flush" className="mb-4 mx-auto" style={{ maxWidth: "min(400px, 90vw)", maxHeight: "20vh", overflowY: "auto" }}>
+                  {getAvailableIngredients.map(item => (
+                    <ListGroup.Item key={item.name}>
+                      {item.name}: {item.owned ? item.quantity : towns.find(t => t.name === currentTown).ingredients.includes(item.name) ? "∞ (Town)" : "0"}
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              </Card.Body>
+              {/* Bottom Navigation Bar */}
+              <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(255, 255, 255, 0.9)", padding: "0.5rem 0", borderTop: "1px solid #ccc" }}>
+                <Container>
+                  <Row className="flex-wrap justify-content-center">
+                    <Col xs="auto" className="mb-2">
+                      <Dropdown>
+                        <Dropdown.Toggle variant="primary" size="sm">Craft</Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => toggleModal("craft")}>Craft Items</Dropdown.Item>
+                          <Dropdown.Item onClick={() => toggleModal("healing")}>Craft Healing Potion</Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </Col>
+                    <Col xs="auto" className="mb-2">
+                      <Button variant="danger" size="sm" onClick={startCombat}>Combat</Button>
+                    </Col>
+                    <Col xs="auto" className="mb-2">
+                      <Dropdown>
+                        <Dropdown.Toggle variant="success" size="sm">Town</Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => toggleModal("market")}>Visit Market</Dropdown.Item>
+                          <Dropdown.Item onClick={() => toggleModal("gather")}>Gather Ingredient</Dropdown.Item>
+                          <Dropdown.Header>Travel</Dropdown.Header>
+                          {towns.map(town => (
+                            <Dropdown.Item
+                              key={town.name}
+                              onClick={() => travel(town.name)}
+                              disabled={currentTown === town.name || modals.travel}
+                            >
+                              {town.name}
+                            </Dropdown.Item>
+                          ))}
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </Col>
+                    <Col xs="auto" className="mb-2">
+                      <Dropdown>
+                        <Dropdown.Toggle variant="outline-info" size="sm">Quests ({player.quests.length})</Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => toggleModal("quests")}>Quests</Dropdown.Item>
+                          <Dropdown.Item onClick={() => toggleModal("daily")}>Tasks</Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </Col>
+                    <Col xs="auto" className="mb-2">
+                      <Dropdown>
+                        <Dropdown.Toggle variant="outline-secondary" size="sm">Stats</Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => toggleModal("stats")}>Stats</Dropdown.Item>
+                          <Dropdown.Item onClick={() => toggleModal("skills")}>Skills</Dropdown.Item>
+                          <Dropdown.Item onClick={() => toggleModal("leaderboard")}>Leaderboard</Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </Col>
+                    <Col xs="auto" className="mb-2">
+                      <Dropdown>
+                        <Dropdown.Toggle variant="outline-dark" size="sm">More</Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => toggleModal("community")}>Community</Dropdown.Item>
+                          <Dropdown.Item onClick={() => toggleModal("customize")}>Customize</Dropdown.Item>
+                          <Dropdown.Item onClick={() => toggleModal("events")}>Events</Dropdown.Item>
+                          <Dropdown.Item onClick={() => toggleModal("guild")}>Guild {player.guild ? `(${player.guild.name})` : ""}</Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </Col>
+                  </Row>
+                  {countdown !== null && countdown > 0 && <p className="mt-1 text-center" style={{ fontSize: "0.875rem" }}>Gather: {formatCountdown(countdown)}</p>}
+                  {queuedCountdown !== null && queuedCountdown > 0 && <p className="mt-1 text-center" style={{ fontSize: "0.875rem" }}>Queued: {formatCountdown(queuedCountdown)}</p>}
+                </Container>
+              </div>
             </Card>
           </Col>
         </Row>
       </Container>
-
+      {/* Modals remain unchanged for brevity, but apply max-height as suggested */}
+      
       <Modal show={modals.quests} onHide={() => toggleModal("quests")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
         <Modal.Header closeButton><Modal.Title>Quests</Modal.Title></Modal.Header>
         <Modal.Body>
