@@ -883,8 +883,8 @@ const craftPotionInCombat = useCallback((potionName) => {
   return (
     <div style={{ minHeight: "100vh", maxHeight: "100vh", overflowY: "auto", background: "url('/background.jpg') center/cover" }}>
       <Head><title>Kaito's Adventure</title></Head>
-      <Container fluid className="py-3 py-md-5">
-        <Button variant="info" style={{ position: "absolute", top: "10px", left: "10px" }} onClick={() => toggleModal("leaderboard")}>Leaderboard</Button>
+      <Container fluid className="py-3 py-md-5" style={{ paddingTop: "50px" }}>
+        <Button variant="info" style={{ position: "absolute", top: "10px", left: "10px", zIndex: 1000 }} onClick={() => toggleModal("leaderboard")}>Leaderboard</Button>
         <Row className="justify-content-center">
           <Col md={10}>
             <Card className={`text-center ${styles.gildedCard}`} style={{ background: "rgba(255, 255, 255, 0.9)", maxHeight: "80vh", overflowY: "auto" }}>
