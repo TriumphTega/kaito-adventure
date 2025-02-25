@@ -1001,38 +1001,38 @@ const craftPotionInCombat = useCallback((potionName) => {
         </Row>
       </Container>
       {/* Modals remain unchanged for brevity, but apply max-height as suggested */}
-      
-      <Modal show={modals.quests} onHide={() => toggleModal("quests")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Quests</Modal.Title></Modal.Header>
-        <Modal.Body>
-          <ListGroup variant="flush">
-            {player.quests.map(quest => (
-              <ListGroup.Item key={quest.id}>
-                {quest.description} - {quest.progress}/{quest.target}<br />
-                Reward: {quest.reward.gold ? `${quest.reward.gold} Gold` : ""} {quest.reward.xp ? `${quest.reward.xp} XP` : ""}
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
-          <Button variant="primary" onClick={() => addQuest(towns.find(t => t.name === currentTown).npcs[0].quest)} className="mt-3" disabled={player.quests.length >= 3}>Accept New Quest</Button>
-        </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("quests")}>Close</Button></Modal.Footer>
-      </Modal>
 
-      <Modal show={modals.leaderboard} onHide={() => toggleModal("leaderboard")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Leaderboard</Modal.Title></Modal.Header>
-        <Modal.Body>
-          <ListGroup variant="flush">
-            {leaderboardData.map((entry, index) => (
-              <ListGroup.Item key={index}>{index + 1}. {entry.name} - Level {entry.level} - {entry.gold} Gold</ListGroup.Item>
-            ))}
-          </ListGroup>
-        </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("leaderboard")}>Close</Button></Modal.Footer>
-      </Modal>
+     <Modal show={modals.quests} onHide={() => toggleModal("quests")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Header closeButton><Modal.Title>Quests</Modal.Title></Modal.Header>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+    <ListGroup variant="flush">
+      {player.quests.map(quest => (
+        <ListGroup.Item key={quest.id}>
+          {quest.description} - {quest.progress}/{quest.target}<br />
+          Reward: {quest.reward.gold ? `${quest.reward.gold} Gold` : ""} {quest.reward.xp ? `${quest.reward.xp} XP` : ""}
+        </ListGroup.Item>
+      ))}
+    </ListGroup>
+    <Button variant="primary" onClick={() => addQuest(towns.find(t => t.name === currentTown).npcs[0].quest)} className="mt-3" disabled={player.quests.length >= 3}>Accept New Quest</Button>
+  </Modal.Body>
+  <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("quests")}>Close</Button></Modal.Footer>
+</Modal>
 
-      <Modal show={modals.craft} onHide={() => toggleModal("craft")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+<Modal show={modals.leaderboard} onHide={() => toggleModal("leaderboard")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Header closeButton><Modal.Title>Leaderboard</Modal.Title></Modal.Header>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+    <ListGroup variant="flush">
+      {leaderboardData.map((entry, index) => (
+        <ListGroup.Item key={index}>{index + 1}. {entry.name} - Level {entry.level} - {entry.gold} Gold</ListGroup.Item>
+      ))}
+    </ListGroup>
+  </Modal.Body>
+  <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("leaderboard")}>Close</Button></Modal.Footer>
+</Modal>
+
+<Modal show={modals.craft} onHide={() => toggleModal("craft")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
   <Modal.Header closeButton><Modal.Title>Craft Items</Modal.Title></Modal.Header>
-  <Modal.Body>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
     <Form>
       <h5>Select Ingredients:</h5>
       {getAvailableIngredients.map(item => (
@@ -1069,7 +1069,7 @@ const craftPotionInCombat = useCallback((potionName) => {
 
 <Modal show={modals.healing} onHide={() => toggleModal("healing")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
   <Modal.Header closeButton><Modal.Title>Healing Potions</Modal.Title></Modal.Header>
-  <Modal.Body>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
     <p>Healing potions can only be crafted and used during combat from the combat menu.</p>
   </Modal.Body>
   <Modal.Footer>
@@ -1077,41 +1077,41 @@ const craftPotionInCombat = useCallback((potionName) => {
   </Modal.Footer>
 </Modal>
 
-      <Modal show={modals.gather} onHide={() => toggleModal("gather")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Gather Options in {currentTown}</Modal.Title></Modal.Header>
-        <Modal.Body>
-          <Card className="mb-3">
-            <Card.Body>
-              <Card.Title>Normal Gather</Card.Title>
-              <Card.Text>Gather one ingredient for free (cooldown varies by town). {weather.gatherBonus ? `Bonus: ${weather.gatherBonus.chance * 100}% chance for ${weather.gatherBonus.ingredient}` : ""}</Card.Text>
-              <Button variant="warning" onClick={gatherSingle} disabled={countdown > 0}>Gather Now</Button>
-            </Card.Body>
-          </Card>
-          <Card>
-            <Card.Body>
-              <Card.Title>Queue Gathers for Gold</Card.Title>
-              <Card.Text>Pay 1 gold per gather, up to 5 (3-minute global cooldown).</Card.Text>
-              <div>
-                {[1, 2, 3, 4, 5].map(count => (
-                  <Button
-                    key={count}
-                    variant="outline-warning"
-                    className="m-1"
-                    onClick={() => queueGathers(count)}
-                    disabled={player.gold < count || queuedCountdown > 0}
-                  >
-                    {count} ({count} gold)
-                  </Button>
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-        </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("gather")}>Close</Button></Modal.Footer>
-      </Modal>
+<Modal show={modals.gather} onHide={() => toggleModal("gather")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Header closeButton><Modal.Title>Gather Options in {currentTown}</Modal.Title></Modal.Header>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+    <Card className="mb-3">
+      <Card.Body>
+        <Card.Title>Normal Gather</Card.Title>
+        <Card.Text>Gather one ingredient for free (cooldown varies by town). {weather.gatherBonus ? `Bonus: ${weather.gatherBonus.chance * 100}% chance for ${weather.gatherBonus.ingredient}` : ""}</Card.Text>
+        <Button variant="warning" onClick={gatherSingle} disabled={countdown > 0}>Gather Now</Button>
+      </Card.Body>
+    </Card>
+    <Card>
+      <Card.Body>
+        <Card.Title>Queue Gathers for Gold</Card.Title>
+        <Card.Text>Pay 1 gold per gather, up to 5 (3-minute global cooldown).</Card.Text>
+        <div>
+          {[1, 2, 3, 4, 5].map(count => (
+            <Button
+              key={count}
+              variant="outline-warning"
+              className="m-1"
+              onClick={() => queueGathers(count)}
+              disabled={player.gold < count || queuedCountdown > 0}
+            >
+              {count} ({count} gold)
+            </Button>
+          ))}
+        </div>
+      </Card.Body>
+    </Card>
+  </Modal.Body>
+  <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("gather")}>Close</Button></Modal.Footer>
+</Modal>
 
-      <Modal show={modals.combat} onHide={() => toggleModal("combat")} size="xl" centered className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-  <Modal.Body className="p-0">
+<Modal show={modals.combat} onHide={() => toggleModal("combat")} centered className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Body className="p-0" style={{ maxHeight: "80vh", overflowY: "auto" }}>
     <Card className="border-0">
       <Card.Header className="bg-danger text-center text-white"><h3>Combat Arena</h3></Card.Header>
       <Card.Body className={styles.combatBody}>
@@ -1172,7 +1172,7 @@ const craftPotionInCombat = useCallback((potionName) => {
           </Form>
         </div>
         {combatState && (
-          <ListGroup className="mt-3" style={{ maxHeight: "150px", overflowY: "auto" }}>
+          <ListGroup className="mt-3" style={{ maxHeight: "20vh", overflowY: "auto" }}>
             {combatState.log.map((entry, idx) => <ListGroup.Item key={idx}>{entry}</ListGroup.Item>)}
           </ListGroup>
         )}
@@ -1189,9 +1189,9 @@ const craftPotionInCombat = useCallback((potionName) => {
   </Modal.Body>
 </Modal>
 
-      <Modal show={modals.market} onHide={() => toggleModal("market")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+<Modal show={modals.market} onHide={() => toggleModal("market")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
   <Modal.Header closeButton><Modal.Title>{currentTown} Market</Modal.Title></Modal.Header>
-  <Modal.Body>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
     <h5>Sell Your Drinks:</h5>
     <ListGroup className="mb-3">
       {player.inventory.filter(item => player.recipes.some(r => r.name === item.name && r.type === "sell")).map(item => {
@@ -1221,106 +1221,106 @@ const craftPotionInCombat = useCallback((potionName) => {
   <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("market")}>Close</Button></Modal.Footer>
 </Modal>
 
-      <Modal show={modals.npc} onHide={() => toggleModal("npc")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Talk to {selectedNPC?.name}</Modal.Title></Modal.Header>
-        <Modal.Body>
-          <p>{selectedNPC?.dialogue}</p>
-          {selectedNPC?.quest && !player.quests.some(q => q.id === selectedNPC.quest.id) && (
-            <Button variant="primary" onClick={() => addQuest(selectedNPC.quest)}>Accept Quest</Button>
-          )}
-        </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("npc")}>Close</Button></Modal.Footer>
-      </Modal>
+<Modal show={modals.npc} onHide={() => toggleModal("npc")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Header closeButton><Modal.Title>Talk to {selectedNPC?.name}</Modal.Title></Modal.Header>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+    <p>{selectedNPC?.dialogue}</p>
+    {selectedNPC?.quest && !player.quests.some(q => q.id === selectedNPC.quest.id) && (
+      <Button variant="primary" onClick={() => addQuest(selectedNPC.quest)}>Accept Quest</Button>
+    )}
+  </Modal.Body>
+  <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("npc")}>Close</Button></Modal.Footer>
+</Modal>
 
-      <Modal show={modals.daily} onHide={() => toggleModal("daily")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Daily & Weekly Tasks</Modal.Title></Modal.Header>
-        <Modal.Body>
-          <p>Daily Login Bonus: 20 Gold (Claimed today)</p>
-          <h5>Daily Challenges:</h5>
-          <ListGroup variant="flush">
-            {player.dailyTasks.map(task => (
-              <ListGroup.Item key={task.id}>
-                {task.description} - {task.progress}/{task.target}<br />
-                Reward: {task.reward.gold ? `${task.reward.gold} Gold` : ""} {task.reward.xp ? `${task.reward.xp} XP` : ""}<br />
-                Time Left: {formatCountdown(Math.max(0, Math.floor((task.expires - Date.now()) / 1000)))}
-                {task.completed && " (Completed)"}
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
-          <h5 className="mt-3">Weekly Challenges:</h5>
-          <ListGroup variant="flush">
-            {player.weeklyTasks.map(task => (
-              <ListGroup.Item key={task.id}>
-                {task.description} - {task.progress}/{task.target}<br />
-                Reward: {task.reward.gold ? `${task.reward.gold} Gold` : ""} {task.reward.xp ? `${task.reward.xp} XP` : ""}<br />
-                Time Left: {formatCountdown(Math.max(0, Math.floor((task.expires - Date.now()) / 1000)))}
-                {task.completed && " (Completed)"}
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
-        </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("daily")}>Close</Button></Modal.Footer>
-      </Modal>
+<Modal show={modals.daily} onHide={() => toggleModal("daily")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Header closeButton><Modal.Title>Daily & Weekly Tasks</Modal.Title></Modal.Header>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+    <p>Daily Login Bonus: 20 Gold (Claimed today)</p>
+    <h5>Daily Challenges:</h5>
+    <ListGroup variant="flush">
+      {player.dailyTasks.map(task => (
+        <ListGroup.Item key={task.id}>
+          {task.description} - {task.progress}/{task.target}<br />
+          Reward: {task.reward.gold ? `${task.reward.gold} Gold` : ""} {task.reward.xp ? `${task.reward.xp} XP` : ""}<br />
+          Time Left: {formatCountdown(Math.max(0, Math.floor((task.expires - Date.now()) / 1000)))}
+          {task.completed && " (Completed)"}
+        </ListGroup.Item>
+      ))}
+    </ListGroup>
+    <h5 className="mt-3">Weekly Challenges:</h5>
+    <ListGroup variant="flush">
+      {player.weeklyTasks.map(task => (
+        <ListGroup.Item key={task.id}>
+          {task.description} - {task.progress}/{task.target}<br />
+          Reward: {task.reward.gold ? `${task.reward.gold} Gold` : ""} {task.reward.xp ? `${task.reward.xp} XP` : ""}<br />
+          Time Left: {formatCountdown(Math.max(0, Math.floor((task.expires - Date.now()) / 1000)))}
+          {task.completed && " (Completed)"}
+        </ListGroup.Item>
+      ))}
+    </ListGroup>
+  </Modal.Body>
+  <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("daily")}>Close</Button></Modal.Footer>
+</Modal>
 
-      <Modal show={modals.stats} onHide={() => toggleModal("stats")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Lifetime Stats</Modal.Title></Modal.Header>
-        <Modal.Body>
-          <ListGroup variant="flush">
-            <ListGroup.Item>Enemies Defeated: {player.stats.enemiesDefeated}</ListGroup.Item>
-            <ListGroup.Item>Potions Crafted: {player.stats.potionsCrafted}</ListGroup.Item>
-            <ListGroup.Item>Items Sold: {player.stats.itemsSold}</ListGroup.Item>
-            <ListGroup.Item>Gathers Performed: {player.stats.gathers}</ListGroup.Item>
-          </ListGroup>
-        </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("stats")}>Close</Button></Modal.Footer>
-      </Modal>
+<Modal show={modals.stats} onHide={() => toggleModal("stats")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Header closeButton><Modal.Title>Lifetime Stats</Modal.Title></Modal.Header>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+    <ListGroup variant="flush">
+      <ListGroup.Item>Enemies Defeated: {player.stats.enemiesDefeated}</ListGroup.Item>
+      <ListGroup.Item>Potions Crafted: {player.stats.potionsCrafted}</ListGroup.Item>
+      <ListGroup.Item>Items Sold: {player.stats.itemsSold}</ListGroup.Item>
+      <ListGroup.Item>Gathers Performed: {player.stats.gathers}</ListGroup.Item>
+    </ListGroup>
+  </Modal.Body>
+  <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("stats")}>Close</Button></Modal.Footer>
+</Modal>
 
-      <Modal show={modals.community} onHide={() => toggleModal("community")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Community Events</Modal.Title></Modal.Header>
-        <Modal.Body>
-          <p>{mockCommunityEvent().description}</p>
-          <Button variant="primary" onClick={mockCommunityEvent().action}>Perform Action</Button>
-        </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("community")}>Close</Button></Modal.Footer>
-      </Modal>
+<Modal show={modals.community} onHide={() => toggleModal("community")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Header closeButton><Modal.Title>Community Events</Modal.Title></Modal.Header>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+    <p>{mockCommunityEvent().description}</p>
+    <Button variant="primary" onClick={mockCommunityEvent().action}>Perform Action</Button>
+  </Modal.Body>
+  <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("community")}>Close</Button></Modal.Footer>
+</Modal>
 
-      <Modal show={modals.customize} onHide={() => toggleModal("customize")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Customize Character</Modal.Title></Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group>
-              <Form.Label>Name</Form.Label>
-              <Form.Control type="text" defaultValue={player.name} id="customName" />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Avatar</Form.Label>
-              <Form.Control as="select" defaultValue={player.avatar} id="customAvatar">
-                <option value="default">Default</option>
-                <option value="warrior">Warrior</option>
-                <option value="craftsman">Craftsman</option>
-              </Form.Control>
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Trait</Form.Label>
-              <Form.Control as="select" defaultValue={player.trait} id="customTrait">
-                <option value={null}>None</option>
-                <option value="warrior">Warrior (+5 Combat Damage)</option>
-                <option value="craftsman">Craftsman (+10% Craft Success)</option>
-              </Form.Control>
-            </Form.Group>
-            <Button variant="primary" onClick={() => customizeCharacter(
-              document.getElementById("customName").value,
-              document.getElementById("customAvatar").value,
-              document.getElementById("customTrait").value
-            )}>Save</Button>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("customize")}>Close</Button></Modal.Footer>
-      </Modal>
+<Modal show={modals.customize} onHide={() => toggleModal("customize")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Header closeButton><Modal.Title>Customize Character</Modal.Title></Modal.Header>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+    <Form>
+      <Form.Group>
+        <Form.Label>Name</Form.Label>
+        <Form.Control type="text" defaultValue={player.name} id="customName" />
+      </Form.Group>
+      <Form.Group>
+        <Form.Label>Avatar</Form.Label>
+        <Form.Control as="select" defaultValue={player.avatar} id="customAvatar">
+          <option value="default">Default</option>
+          <option value="warrior">Warrior</option>
+          <option value="craftsman">Craftsman</option>
+        </Form.Control>
+      </Form.Group>
+      <Form.Group>
+        <Form.Label>Trait</Form.Label>
+        <Form.Control as="select" defaultValue={player.trait} id="customTrait">
+          <option value={null}>None</option>
+          <option value="warrior">Warrior (+5 Combat Damage)</option>
+          <option value="craftsman">Craftsman (+10% Craft Success)</option>
+        </Form.Control>
+      </Form.Group>
+      <Button variant="primary" onClick={() => customizeCharacter(
+        document.getElementById("customName").value,
+        document.getElementById("customAvatar").value,
+        document.getElementById("customTrait").value
+      )}>Save</Button>
+    </Form>
+  </Modal.Body>
+  <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("customize")}>Close</Button></Modal.Footer>
+</Modal>
 
       <Modal show={modals.guild} onHide={() => toggleModal("guild")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
   <Modal.Header closeButton><Modal.Title>Guild</Modal.Title></Modal.Header>
-  <Modal.Body>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
     {player.guild ? (
       <>
         <p>Member of: {player.guild.name}</p>
@@ -1338,61 +1338,62 @@ const craftPotionInCombat = useCallback((potionName) => {
   <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("guild")}>Close</Button></Modal.Footer>
 </Modal>
 
-      <Modal show={modals.skills} onHide={() => toggleModal("skills")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Skills</Modal.Title></Modal.Header>
-        <Modal.Body>
-          <Tabs defaultActiveKey="Warrior" id="skill-tabs" className="mb-3">
-            {Object.keys(skillTrees).map(tree => (
-              <Tab eventKey={tree} title={tree} key={tree}>
-                <ListGroup variant="flush">
-                  {skillTrees[tree].map(skill => {
-                    const playerSkill = player.skills.find(s => s.name === skill.name);
-                    return (
-                      <ListGroup.Item key={skill.name}>
-                        {skill.name} - Level {playerSkill ? playerSkill.level : 0} (Uses: {playerSkill ? playerSkill.uses : 0})
-                        <br />
-                        {skill.effect.damage && `Damage: ${playerSkill ? playerSkill.effect.damage : skill.effect.damage}`}
-                        {skill.effect.healBonus && ` Heal Bonus: ${playerSkill ? playerSkill.effect.healBonus : skill.effect.healBonus}`}
-                        {skill.effect.costReduction && ` Cost Reduction: ${(playerSkill ? playerSkill.effect.costReduction : skill.effect.costReduction) * 100}%`}
-                        {skill.effect.cooldownReduction && ` Cooldown Reduction: ${(playerSkill ? playerSkill.effect.cooldownReduction : skill.effect.cooldownReduction) * 100}%`}
-                        {skill.effect.rareChance && ` Rare Chance: ${(playerSkill ? playerSkill.effect.rareChance : skill.effect.rareChance) * 100}%`}
-                        {skill.effect.stunChance && ` Stun Chance: ${(playerSkill ? playerSkill.effect.stunChance : skill.effect.stunChance) * 100}%`}
-                        {!playerSkill && (
-                          <Button variant="outline-primary" size="sm" className="ml-2" onClick={() => unlockSkill(skill.name, tree)}>
-                            Unlock ({skill.cost.gold} Gold)
-                          </Button>
-                        )}
-                      </ListGroup.Item>
-                    );
-                  })}
-                </ListGroup>
-              </Tab>
-            ))}
-          </Tabs>
-        </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("skills")}>Close</Button></Modal.Footer>
-      </Modal>
+<Modal show={modals.skills} onHide={() => toggleModal("skills")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Header closeButton><Modal.Title>Skills</Modal.Title></Modal.Header>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+    <Tabs defaultActiveKey="Warrior" id="skill-tabs" className="mb-3">
+      {Object.keys(skillTrees).map(tree => (
+        <Tab eventKey={tree} title={tree} key={tree}>
+          <ListGroup variant="flush">
+            {skillTrees[tree].map(skill => {
+              const playerSkill = player.skills.find(s => s.name === skill.name);
+              return (
+                <ListGroup.Item key={skill.name}>
+                  {skill.name} - Level {playerSkill ? playerSkill.level : 0} (Uses: {playerSkill ? playerSkill.uses : 0})
+                  <br />
+                  {skill.effect.damage && `Damage: ${playerSkill ? playerSkill.effect.damage : skill.effect.damage}`}
+                  {skill.effect.healBonus && ` Heal Bonus: ${playerSkill ? playerSkill.effect.healBonus : skill.effect.healBonus}`}
+                  {skill.effect.costReduction && ` Cost Reduction: ${(playerSkill ? playerSkill.effect.costReduction : skill.effect.costReduction) * 100}%`}
+                  {skill.effect.cooldownReduction && ` Cooldown Reduction: ${(playerSkill ? playerSkill.effect.cooldownReduction : skill.effect.cooldownReduction) * 100}%`}
+                  {skill.effect.rareChance && ` Rare Chance: ${(playerSkill ? playerSkill.effect.rareChance : skill.effect.rareChance) * 100}%`}
+                  {skill.effect.stunChance && ` Stun Chance: ${(playerSkill ? playerSkill.effect.stunChance : skill.effect.stunChance) * 100}%`}
+                  {!playerSkill && (
+                    <Button variant="outline-primary" size="sm" className="ml-2" onClick={() => unlockSkill(skill.name, tree)}>
+                      Unlock ({skill.cost.gold} Gold)
+                    </Button>
+                  )}
+                </ListGroup.Item>
+              );
+            })}
+          </ListGroup>
+        </Tab>
+      ))}
+    </Tabs>
+  </Modal.Body>
+  <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("skills")}>Close</Button></Modal.Footer>
+</Modal>
 
-      <Modal show={modals.events} onHide={() => toggleModal("events")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Header closeButton><Modal.Title>Current Events</Modal.Title></Modal.Header>
-        <Modal.Body>
-          {currentEvent ? (
-            <p>{currentEvent.description} (Time Left: {formatCountdown(Math.max(0, Math.floor((eventTimer - Date.now()) / 1000)))})</p>
-          ) : (
-            <p>No active events right now.</p>
-          )}
-        </Modal.Body>
-        <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("events")}>Close</Button></Modal.Footer>
-      </Modal>
+<Modal show={modals.events} onHide={() => toggleModal("events")} className={styles.gildedModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Header closeButton><Modal.Title>Current Events</Modal.Title></Modal.Header>
+  <Modal.Body style={{ maxHeight: "70vh", overflowY: "auto" }}>
+    {currentEvent ? (
+      <p>{currentEvent.description} (Time Left: {formatCountdown(Math.max(0, Math.floor((eventTimer - Date.now()) / 1000)))})</p>
+    ) : (
+      <p>No active events right now.</p>
+    )}
+  </Modal.Body>
+  <Modal.Footer><Button variant="secondary" onClick={() => toggleModal("events")}>Close</Button></Modal.Footer>
+</Modal>
 
-      <Modal show={modals.travel} backdrop="static" keyboard={false} className={styles.travelModal} backdropClassName={styles.lightBackdrop}>
-        <Modal.Body className={styles.travelBody}>
-          <div className={styles.travelContent}>
-            <Image src="/travel-chibi.jpg" alt="Traveling Chibi" width={100} height={100} className={styles.travelChibi} />
-            <p>Traveling to {travelDestination}...</p>
-          </div>
-        </Modal.Body>
-      </Modal>
+<Modal show={modals.travel} backdrop="static" keyboard={false} className={styles.travelModal} backdropClassName={styles.lightBackdrop}>
+  <Modal.Body className={styles.travelBody} style={{ maxHeight: "70vh", overflowY: "auto" }}>
+    <div className={styles.travelContent}>
+      <Image src="/travel-chibi.jpg" alt="Traveling Chibi" width={100} height={100} className={styles.travelChibi} />
+      <p>Traveling to {travelDestination}...</p>
+    </div>
+  </Modal.Body>
+</Modal>
+
     </div>
   );
 };
