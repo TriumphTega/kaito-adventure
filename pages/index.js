@@ -222,6 +222,10 @@ const Home = () => {
     return () => saveToLocalStorage.cancel();
   }, [saveToLocalStorage]);
 
+  const toggleIngredient = useCallback((item) => {
+    setSelectedIngredients(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
+  }, []);
+
   // ---- Weather System ----
   useEffect(() => {
     const changeWeather = () => {
@@ -402,9 +406,7 @@ const Home = () => {
 // ---- Combat ----
 const startCombat = useCallback(() => {
   if (player.health <= 0) {
-    setGameMessage("You’re too weak to fight! Heal up first.");
-    window.alert("You’re too weak to fight! Heal up first.");
-    return;
+    setGameMessage("You’re at 0 health! Craft a healing potion in combat to survive.");
   }
   const enemy = enemies[Math.floor(Math.random() * enemies.length)];
   const levelScaleHealth = 1 + (player.level - 1) * 0.15;
@@ -420,11 +422,13 @@ const startCombat = useCallback(() => {
     },
     enemyHealth: Math.round(enemy.health * levelScaleHealth * weatherMod),
     isAttacking: false,
-    log: [],
+    log: player.health <= 0 ? ["You’re at 0 health! Craft a potion quickly!"] : [],
   });
   setCombatResult(null);
   setModals(prev => ({ ...prev, combat: true }));
-  setGameMessage(`Combat started against ${enemy.name} (HP: ${Math.round(enemy.health * levelScaleHealth * weatherMod)}, Damage: ${Math.round(enemy.damage * levelScaleDamage * weatherMod)})`);
+  if (player.health > 0) {
+    setGameMessage(`Combat started against ${enemy.name} (HP: ${Math.round(enemy.health * levelScaleHealth * weatherMod)}, Damage: ${Math.round(enemy.damage * levelScaleDamage * weatherMod)})`);
+  }
 }, [player.health, player.level, player.maxHealth, weather]);
 
 const attackEnemy = useCallback((skillName = "Basic Attack") => {
