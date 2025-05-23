@@ -1,4 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kaito Adventure (React Native Expo Version)
+
+This project is a mobile-optimized port of the original Kaito Adventure web app, now built with **React Native** using **Expo**. It features navigation between key screens and a UI adapted for mobile usability, while preserving the spirit and style of the original game.
+
+## Tech Stack
+- React Native (with Expo)
+- @react-navigation/native (for navigation)
+- @react-native-async-storage/async-storage (for persistence)
+- react-native-paper (for UI components)
+
+## Main Screens
+- Home (main gameplay)
+- Inventory
+- Quests
+- Stats
+
+## How to Run
+1. Install [Expo CLI](https://docs.expo.dev/get-started/installation/):
+   ```sh
+   npm install -g expo-cli
+   ```
+2. Install dependencies:
+   ```sh
+   npm install
+   ```
+3. Start the Expo app:
+   ```sh
+   expo start
+   ```
+4. Scan the QR code with the Expo Go app on your phone, or run on an emulator.
+
+## Notes
+- The UI has been tweaked for mobile usability, but retains the original theme and feel.
+- All game logic and state are preserved from the web version.
+- For any issues, please open an issue or PR.
 
 ## Getting Started
 
